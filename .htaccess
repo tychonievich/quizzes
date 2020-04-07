@@ -1,15 +1,4 @@
-order allow,deny
-
 <Files *.json>
-    deny from all
-</Files>
-
-<Files cache/*>
-    deny from all
-</Files>
-<Files log/*>
-    deny from all
-</Files>
-<Files questions/*>
+    order allow,deny
     deny from all
 </Files>

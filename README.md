@@ -8,18 +8,18 @@ This directory needs to be in a place apache can find it.
 
 You'll to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
 
-1. `npm install --global katex`{.sh}
-2. `mkdir katex`{.sh}
-3. `cp /usr/lib/node_modules/katex/dist/katex.min.css katex/`{.sh}
-4. `cp -r /usr/lib/node_modeuls/katex/dist/fonts katex/`{.sh}
+1. `npm install --global katex`
+2. `mkdir katex`
+3. `cp /usr/lib/node_modules/katex/dist/katex.min.css katex/`
+4. `cp -r /usr/lib/node_modeuls/katex/dist/fonts katex/`
 
 ### Markdown
 
 You'll need a copy of [Markdown.php](https://github.com/michelf/php-markdown/tree/lib/Michelf) as well.
 
-5. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf`{.sh}
-6. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownExtra.php" -P Michelf`{.sh}
-7. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownInterface.php" -P Michelf`{.sh}
+5. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf`
+6. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownExtra.php" -P Michelf`
+7. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownInterface.php" -P Michelf`
 
 ### Customize
 
@@ -41,7 +41,7 @@ The header consists of lines of the form `key: value`; blank lines are not allow
 
 ### Example
 
-```markdown
+```
 open: 2020-01-24 12:00
 due: 2020-01-27 08:30
 title: Demo Quiz
@@ -103,18 +103,18 @@ Scan or take a picture of your paper and upload it here.
 
 Meaningful headers lines are
 
-key         default             notes
--------     ------------------- ----------------------------------
-`title`     Quiz *tasknumber*   Shows in index view, not in quiz view
-`seconds`   = 60 × `minutes`    time limit; 0 means unlimited. At most one of `seconds`, `minutes`, and `hours` may be given
-`minutes`   = 60 × `hours`      (see `seconds`)
-`hours`     `0`                 (see `seconds`)
-`open`      `2999-12-31 12:00`  time (per server clock) when students may first view the quiz
-`due`       `2999-12-31 12:00`  time (per server clock) when students may no longer view the quiz and quiz key and grade becomes available
-`comments`  `true`              may students add comments to their answers?
-`keyless`   `false`             prevents autograding, hides key, lets students take time-limited quizzes late
-`order`     `shuffle`           if no key shown, how should multiple-choice options be ordered? Values are `shuffle`, `sort`, and `pin`
-`qorder`    = `order`           if no key shown, how should questions be ordered? Values are `shuffle`, `sort`, and `pin`
+|key         |default             |notes                                |
+|:-----------|:-------------------|:------------------------------------|
+|`title`     |Quiz *tasknumber*   |Shows in index view, not in quiz view|
+|`seconds`   |= 60 × `minutes`    |time limit; 0 means unlimited. At most one of `seconds`, `minutes`, and `hours` may be given|
+|`minutes`   |= 60 × `hours`      |(see `seconds`)                      |
+|`hours`     |`0`                 |(see `seconds`)                      |
+|`open`      |`2999-12-31 12:00`  |time (per server clock) when students may first view the quiz|
+|`due`       |`2999-12-31 12:00`  |time (per server clock) when students may no longer view the quiz and quiz key and grade becomes available|
+|`comments`  |`true`              |may students add comments to their answers?|
+|`keyless`   |`false`             |prevents autograding, hides key, lets students take time-limited quizzes late|
+|`order`     |`shuffle`           |if no key shown, how should multiple-choice options be ordered? Values are `shuffle`, `sort`, and `pin`|
+|`qorder`    |= `order`           |if no key shown, how should questions be ordered? Values are `shuffle`, `sort`, and `pin`|
 
 The header lines must be terminated by a blank line.
 

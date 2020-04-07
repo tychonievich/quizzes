@@ -1,0 +1,37 @@
+ol.options { margin-top:-0.5em; }
+ol.options p { margin: 0; padding: 0; }
+ol.options > li { list-style: upper-alpha; }
+body { background:#ccc; padding-top:1em; }
+.question { background: white; border-radius:1ex; padding:0ex 1ex; margin:2ex;  }
+.directions { background: #eee; padding:1ex 1ex; margin:2ex;  }
+.multiquestion { background: #eee; border-radius:1ex; padding:0.7ex 0.7ex; }
+.multiquestion + .multiquestion { margin-top:1em; }
+.submitting { background: #fe7; }
+.submitted { background: #dfd; }
+.disconnected { background: #f33; }
+textarea { background-color: inherit; }
+#clock { position:fixed; right:0px; top:0px; background:#ff7; padding-left:0.5ex; padding-bottom:0.5ex; border-bottom-left-radius:1ex; border-left: 1px solid black; border-bottom: 1px solid black;}
+.correct { background-color: #bfb; padding: 0ex 1ex; }
+.incorrect { background-color: #fbb; padding: 0ex 1ex; }
+.hist { color:#777; min-width: 2em; text-align:right; display:inline-block; }
+.katex .base { margin: 0.5ex auto; }
+
+img.preview { vertical-align: middle; max-height: 10em; box-shadow: 0 0 0.5ex 0.25ex grey; }
+
+ol.options li label { display: flex; align-items: center; }
+ol.options li label input { margin-right: 1ex; }
+ol.options li { padding: 0.5ex 0ex; }
+ol.options li::marker { color: rgba(0,0,0,0.5); }
+
+div.tinput { display: flex; align-items:center; }
+div.tinput textarea { flex-grow: 1; }
+div.tinput *:first-child { margin-right: 1ex; }
+
+.explanation { font-family: sans-serif; color: green; }
+
+
+table { border-collapse: collapse; width:100%; }
+thead tr:last-child { border-bottom: thin black solid; }
+th { text-align:left;  padding:0ex 1ex; }
+tbody tr:nth-child(2n+1) { background-color:#ddd; }
+td { padding:1ex; }

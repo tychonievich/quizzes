@@ -1,323 +1,313 @@
 ﻿<?php
-/**
- * Have a function that finds (student, question wrong with comments, answer, comments) and logs it
- * Have a function that reads the logs and shows to graders
- *  - can add more comments 
- *  - and/or set new grade
- *  - and/or mark for additional review
- * Add grade-adjustment parsing to histogram.grade()
- */
 
-if (php_sapi_name() == "cli") {
-    parse_str(implode('&', array_slice($argv, 1)), $_GET);
-    $_SERVER['REQUEST_URI'] = '.';
-    $user = 'lat7h';
-    $isstaff = true;
-} else {
-    require_once "staff.php";
-    if (!$isstaff) {
-        http_response_code(403);
-        echo 'staff use only';
-        exit;
-    }
+require_once "tools.php";
+ if (!$isstaff) {
+    http_response_code(403);
+    die('staff use only');
 }
 
-require_once "qparse.php";
-require_once "JSON.php";
-require_once "Markdown.php";
-JSON::$use = SERVICES_JSON_LOOSE_TYPE;
-require_once "histogram.php";
-
-
-?><html>
-    <head>
-    <title>Quiz Grader</title>
-    <style>
-        ol.options { margin-top:-1em; }
-        ol.options li p { display: inline; }
-        ol.options li { list-style: upper-alpha; }
-        body { background:#ccc; padding-top:1em; }
-        .question { background: white; border-radius:1ex; padding:0ex 1ex; margin:2ex;  }
-        .directions { background: #eee; padding:1ex 1ex; margin:2ex;  }
-        .multiquestion { background: #eee; border-radius:1ex; padding:0.7ex 0.7ex; }
-        .multiquestion + .multiquestion { margin-top:1em; }
-        .submitting { background: #fe7; }
-        .submitted { background: #dfd; }
-        textarea { background-color: inherit; }
-        #clock { position:fixed; right:0px; top:0px; background:#ff7; padding-left:0.5ex; padding-bottom:0.5ex; border-bottom-left-radius:1ex; border-left: 1px solid black; border-bottom: 1px solid black;}
-        .correct { background-color: #bfb; padding: 0ex 1ex; }
-        .incorrect { background-color: #fbb; padding: 0ex 1ex; }
-        .hist { color:#777; min-width: 2em; text-align:right; display:inline-block; }
-    </style>
-<script type="text/javascript">//<!--
-function grade(user) {
-    var val = document.querySelector('input[name="grade-'+user+'"]:checked');
-    if (!val) return false;
-    val = val.value;
-    if (val == '(other)') {
-        var txt = document.querySelector('input[name="other-'+user+'"]').value;
-        var score = document.querySelector('input[name="score-'+user+'"]').value;
-        if (score && !(score >= 0 && score <= 1)) return false;
-        if (!txt.trim()) return false;
-        
-        var forms = document.getElementsByTagName('form');
-        for(var i = 0; i < forms.length; i+=1) {
-            var uid = forms[i].getAttribute('id').split('-')[0];
-            var newopt = document.createElement('input');
-            newopt.setAttribute('type','radio');
-            newopt.setAttribute('name','grade-'+uid);
-            newopt.setAttribute('value',score+';'+txt);
-            var other = document.getElementById("other-for-"+uid);
-            forms[i].insertBefore(newopt, other);
-            forms[i].insertBefore(document.createTextNode(txt+' ('+score+')'), other);
-            forms[i].insertBefore(document.createElement('br'), other);
-        }
+$_review = array();
+function get_review($quizid) {
+    if (isset($_review[$quizid])) return $_review[$quizid];
+    if (file_exists("log/$quizid/review.json")) {
+        $ans = json_decode(file_get_contents("log/$quizid/review.json"), true);
     } else {
-        var idx = val.indexOf(';');
-        var score = val.substr(0, idx);
-        var txt = val.substr(idx+1);
+        $ans = array();
+        histogram($quizid, $ans);
     }
-    var ans = [
-        <?php echo "'$_GET[qid]', '$_GET[slug]',"; ?>
-        user, score, txt,
-    ];
-    console.log("sending: ", JSON.stringify(ans));
-    ajaxSend(JSON.stringify(ans), user);
-    document.getElementById('q-'+user).className = "question submitting";
+    $_review[$quizid] = $ans;
+    return $ans;
 }
 
-function ajaxSend(data, user) {
+/**
+ * Given a quiz and one of its questions, return an array.
+ * keys are user-submitted text
+ * values are arrays with three keys:
+ *  "matches":{"quiz key":weight, "quiz key":weight, ...}
+ *  "users":["mst3k", ...]
+ *  "decided": (null or number)
+ */
+function get_blanks($quizid, $q) {
+    $slug = $q['slug'];
+    $rev = get_review($quizid);
+    if (!isset($rev["$slug-answers"])) return array();
+    $ext = array();
+    if (file_exists("log/$q[quizid]/key_$slug.json"))
+        $ext = json_decode(file_get_contents("log/$q[quizid]/key_$slug.json"), true);
+
+    $ans = array();
+    foreach($rev["$slug-answers"] as $txt=>$users) {
+        $match = array();
+        foreach($q['key'] as $key) {
+            $k = $key['text'];
+            if(($k[0] == '/') ? preg_match($k, $txt) : $k == $txt)
+                $match[$k] = $key['points'];
+        }
+        $ans[$txt] = array(
+            'users' => $users,
+            'matches' => $match,
+            'decided' => (isset($ext[$txt]) ? $ext[$txt] : null),
+        );
+    }
+    return $ans;
+}
+
+/**
+ * Given a quiz and one of its questions, return an array.
+ * keys are users
+ * values are either null (if not reviewed) or an array with keys
+ *  "feedback":"TA entered text" or "" (if no feedback text)
+ *  "grade":number (new grade) or null (no change)
+ */
+function get_comments($quizid, $slug) {
+    
+    $rev = get_review($quizid);
+    if (!isset($rev[$slug])) return array();
+    $whom = $rev[$slug];
+    $ans = array();
+    foreach($whom as $k) $ans[$k] = null;
+    if (file_exists("log/$quizid/adjustments_$slug.csv")) {
+        $fh = fopen("log/$quizid/adjustments_$slug.csv", "r");
+        while (($row = fgetcsv($fh)) !== FALSE) {
+            $ans[$row[0]] = array(
+                "grade" => is_numeric($row[1]) ? floatval($row[1]) : null,
+                "feedback" => $row[2],
+            );
+        }
+    }
+    return $ans;
+}
+
+function show_blanks($quizid, $q, $mq) {
+    $slug = $q['slug'];
+    if ($mq['text']) echo "<div class='multiquestion'>$mq[text]";
+    showQuestion($q, $quizid, '', 'none', false, $mq['text'], array(''), true, true, false, true);
+    if ($mq['text']) echo '</div>';
+    $anum = 0;
+    foreach(get_blanks($quizid, $q) as $opt => $details) {
+        $anum += 1;
+        echo "<div class='question";
+        if (isset($details['decided'])) echo " submitted";
+        echo "' id='q-$anum'>Reply: <code style='font-size:150%; border: thin solid gray'>";
+        echo htmlentities($opt)."</code> – ".count($details['users'])." replies";
+        $score = 0;
+        foreach($details['matches'] as $key=>$weight) {
+            echo "<br/>matches key($weight): <code style='font-size:150%; border: thin solid gray'>".htmlentities($key)."</code>";
+            if ($weight > $score) $score = $weight;
+        }
+        if (isset($details['decided'])) $score = $details['decided'];
+        echo "<p>Points: <input type='text' id='a-$anum' value='$score' onblur='setKey(\"$anum\",".json_encode($opt).")' onkeydown='pending($\"$anum\")'/></p>";
+        echo "</div>";
+    }
+}
+
+
+function show_comments($quizid, $q, $mq) {
+    $qobj = qparse($quizid);
+    $hist = histogram($qobj);
+    
+    foreach(get_comments($quizid, $q['slug']) as $user=>$details) {
+        $sobj = aparse($qobj, $user);
+        grade($qobj, $sobj); // annotate with score
+        
+        echo "<div class='multiquestion";
+        if (isset($details)) echo " submitted";
+        echo "' id='q-$user'>$mq[text]";
+        showQuestion($q, $quizid, '', $user, $qobj['comments']
+            ,$mq['text']
+            ,isset($sobj[$q['slug']]) ? $sobj[$q['slug']]
+                : array('answer'=>array(),'comments'=>'')
+            ,true
+            ,$hist
+            ,true
+            ,false
+            );
+        $score = isset($sobj[$q['slug']]['score']) ? $sobj[$q['slug']]['score'] : 0;
+        $rawscore = $score;
+        $feedback = '';
+        if (isset($details['grade'])) $score = $details['grade'];
+        if (isset($details['feedback'])) $feedback = $details['feedback'];
+        
+        echo "<p>Points: <input type='text' id='a-$user' value='$score' onblur='setComment(\"$user\")' rawscore='$rawscore' onkeydown='pending(\"$user\")'/></p>";
+        
+        echo "<div class='tinput'><span>Feedback:</span><textarea id='r-$user' onblur='setComment(\"$user\")' onkeydown='pending(\"$user\")'";
+        echo ">";
+        echo htmlentities($feedback);
+        echo "</textarea></div>";
+
+        echo '</div>';
+    }
+    ?><script>
+        document.querySelectorAll('textarea').forEach(x => {
+            x.style.height = 'auto';
+            x.style.height = x.scrollHeight+'px';
+        });
+    </script><?php
+}
+
+
+?><!DOCTYPE html><html>
+    <head>
+    <title>Grade <?=$metadata['quizname']?> <?=isset($_GET['qid']) ? $_GET['qid'] : ''?></title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="katex/katex.min.css">
+
+
+
+<script type="text/javascript">//<!--
+var quizid = <?=json_encode(isset($_GET['qid']) ? $_GET['qid'] : null)?>;
+var slug = <?=json_encode(isset($_GET['slug']) ? $_GET['slug'] : null)?>;
+
+function pending(num) {
+    if (document.getElementById('q-'+num).className != "question submitting")
+        document.getElementById('q-'+num).className = "question submitting";
+}
+
+
+function setKey(id, val) {
+    document.getElementById('q-'+id).className = 'question submitting';
+    let v = Number(document.getElementById('a-'+id).value);
+    if (isNaN(v) || v<0 || v>1) {
+        document.getElementById('q-'+id).className = 'question disconnected';
+        return
+    }
+    let datum = {
+        'kind':'key',
+        'quiz':quizid,
+        'slug':slug,
+        'key':val,
+        'val':v,
+    }
+    console.log(datum);
+    ajaxSend(datum, id);
+    // fixme: send to ajax
+}
+
+function setComment(id) {
+    document.getElementById('q-'+id).className = 'question submitting';
+    let v = document.getElementById('a-'+id).value;
+    if (v != '') {
+        v = Number(v)
+        if (isNaN(v) || v<0 || v>1) {
+            document.getElementById('q-'+id).className = 'question disconnected';
+            return
+        }
+    }
+    if (v == Number(document.getElementById('a-'+id).getAttribute('rawscore')))
+        v = '';
+    let r = document.getElementById('r-'+id).value;
+    let datum = {
+        'kind':'reply',
+        'quiz':quizid,
+        'slug':slug,
+        'user':id,
+        'score':v,
+        'reply':r,
+    }
+    console.log(datum);
+    ajaxSend(datum, id);
+}
+
+function ajaxSend(data, id) {
 	var xhr = new XMLHttpRequest();
 	if (!("withCredentials" in xhr)) {
 		return null;
 	}
-	xhr.open("POST", "grader_report.php", true);
+	xhr.open("POST", "grader_listener.php", true);
 	xhr.withCredentials = true;
     xhr.setRequestHeader("Content-type", 'application/json');
-    xhr.setRequestHeader("Content-length", data.length);
 	xhr.onerror = function() {
 		console.log("auto-check for new data broken");
 	}
     xhr.onreadystatechange = function() { 
-        if(xhr.readyState == 4 && xhr.status == 200) {
-            document.getElementById('q-'+user).className = "question submitted";
-            console.log("response: " + xhr.responseText);
+        if(xhr.readyState == 4) {
+            console.log("done", xhr);
+            if (xhr.status == 200) {
+                document.getElementById('q-'+id).className = "question submitted";
+                console.log("response: " + xhr.responseText);
+            }
         }
     }
-	xhr.send(data);
+	xhr.send(JSON.stringify(data));
 }
 //--></script>
     </head>
 <body><?php 
 
 
-/** returns
- * {'slug1':{'mst3k':{'comment':'bad question','score':0.0}, }
- * ,'slug2':{'mst3k':{'comment':'bad question','score':0.0}, }
- * }
- */
-function getReviewSheet($num) {
-    if (basename($num) != $num || !file_exists("log/$num")) return FALSE;
-    if (file_exists("log/$num/review.json")) return JSON::parse(file_get_contents("log/$num/review.json"));
-    
-    $qs = array();
-    $h = qparse("questions/$num.md", $qs);
-    $due = new DateTime($h['due']);
-    $now = new DateTime();
-    if ($now < $due) return FALSE;
-    
-    
-    $review = array();
-
-    foreach($qs as $idx=>$mq) {
-        foreach($mq["parts"] as $idx2=>$q) {
-            $parts[$q['slug']] = $q;
-            $review[$q['slug']] = array('-'=>$q);
+if (isset($_GET['qid']) && !isset(($qobj = qparse($_GET['qid']))['error'])) {
+    $questions = array();
+    $mqs = array();
+    foreach($qobj['q'] as $mq) foreach($mq['q'] as $q) {
+        $questions[$q['slug']] = $q;
+        $mqs[$q['slug']] = $mq;
+    }
+    if (isset($_GET['slug']) && isset($questions[$_GET['slug']])) {
+        if ($_GET['kind'] == 'blank') {
+            show_blanks($_GET['qid'], $questions[$_GET['slug']], $mqs[$_GET['slug']]);
+        } else if ($_GET['kind'] == 'comment') {
+            show_comments($_GET['qid'], $questions[$_GET['slug']], $mqs[$_GET['slug']]);
+        } else {
+            echo "To do: show \"$_GET[kind]\" view for $qobj[slug] question $_GET[slug]\n";
         }
-    }
-
-    foreach(glob("log/$num/*.log") as $j=>$logname) { 
-        $ans = getAnswers($logname);
-        $user = basename($logname,".log");
-        foreach($ans as $q => $a) {
-            $score = grade($review[$q]['-'], $a);
-            if ($score < 1 && array_key_exists('comments', $a) && trim($a['comments'])) {
-                $review[$q][$user] = array('comment'=>$a['comments'], 'score'=>$score, 'answer'=>$a['answer']);
-            }
-        }
-    }
-    
-    file_put_contents("log/$num/review.json", json_encode($review));
-    
-    return $review;    
-}
-
-/** Returns the number resolved and the number requesting resolution */
-function ratioGraded_Question($commenters, $comments) {
-    $count = 0.0;
-    $responded_to = 0.0;
-    foreach($commenters as $user => $com_score) {
-        if ($user == '-') continue;
-        $count += 1;
-        $responded_to += array_key_exists($user, $comments['ans']);
-    }
-    return array($responded_to, $count);
-}
-
-/** returns
- * {'mst3k':{'score':'1.0', 'comment':'you got it', grader:'lat7h', date:'2016-08-31 14:08'}
- * ,'lat7h':{'score':'', 'comment':'off-topic comment', grader:'lat7h', date:'2016-08-31 14:08'}
- * }
- */
-function getGraderComments($num, $q) {
-    $answer = array();
-    $key = array();
-    $key['your comment does not change which answer is correct'] = "";
-    $key['your comment is not actually true'] = "0.0";
-    $key['your comment suggests partial understanding of the topic'] = "0.5";
-    $key['your comment suggests you understood the topic'] = "1.0";
-
-    if (basename($num) != $num || !file_exists("log/$num")) return array('ans'=>$answer, 'key'=>$key);
-    if (basename($q) != $q || !file_exists("log/$num/adjustments_$q.log")) return array('ans'=>$answer, 'key'=>$key);
-    
-    
-    // user,score,comments,grader,date -- score may be "" or a number
-    $fh = fopen("log/$num/adjustments_$q.log", "rb");
-    while(($data = fgetcsv($fh)) !== FALSE) {
-        if (count($data) != 5) continue;
-        $answer[$data[0]] = array('score'=>$data[1], 'comment'=>$data[2], 'grader'=>$data[3], 'date'=>$data[4]);
-        $key[$data[2]] = $data[1];
-    }
-    $key['your comment does not change which answer is correct'] = "";
-    $key['your comment used option letters, which were randomly assigned and are not accessible during grading'] = "";
-    $key['your comment is not actually true'] = "0.0";
-    $key['your comment suggests partial understanding of the topic'] = "0.5";
-    $key['your comment suggests you understood the topic'] = "1.0";
-    
-    return array('ans'=>$answer, 'key'=>$key);
-}
-
-/** Renders one student answer item */
-function showStudentAnswer($u, $q, $a) {
-    
-    echo '<div class="description">';
-    $md = trim($q['text']);
-    $md =  "<span class=\"hist\">(score: ".round($a['score'],2).")</span> " . $md;
-    if ($q['checkbox']) $md .= "    \n**Select all that apply**";
-    echo MarkdownExtra::defaultTransform("**Question**: " . $md);
-    echo '</div><div class="options" id="o-'.$u.'">';
-    if (array_key_exists('choices', $q)) {
-        echo '<ol class="options">';
-        foreach($q['choices'] as $key=>$val) {
-            if ($val['remove'] || $val['chosen']) continue;
-            echo "\n<li>";
-            $chosen = array_key_exists('answer', $a) && in_array($val['slug'], $a['answer']);
-            if ($val['correct']) 
-                if ($chosen) echo '<span class="correct">☑</span>';
-                else echo '<span class="incorrect">☑</span>';
-            else 
-                if ($chosen) echo '<span class="incorrect">☐</span>';
-                else echo '<span class="correct">☐</span>';
-            echo '<input disabled="disabled" type="';
-            echo $q['checkbox'] ? 'checkbox' : 'radio';
-            echo '" name="ans-'.$u.'" value="'.$val['slug'].'"';
-            if ($chosen) echo ' checked="checked"';
-            echo '></input> ';
-            echo MarkdownExtra::defaultTransform($val['text']);
-            echo '</li>';
-        }
-        echo '</ol>';
     } else {
-        $correctAns = false;
-        
-        echo 'Answer: <input disabled="disabled" type="text" name="ans-'.$u.'"';
-        if (array_key_exists('answer', $a)) {
-            echo ' value="'.htmlentities($a['answer'][0]).'"';
-            if ($q['solution'][0] == '/') {
-                $correctAns = preg_match($q['solution'], $a['answer'][0]);
-            } else {
-                $correctAns = trim($q['answer'][0]) == $a['solution'];
+        $rev = get_review($qobj['slug']);
+        ?><table><thead>
+            <tr><th>Kind</th><th>Hash</th><th>Done</th><th>Text</th></tr>
+        </thead><tbody>
+        <?php
+        /*
+        $qnum = 0;
+        foreach($questions as $num=>$q) {
+            $qnum += 1;
+            if (isset($rev["$q[slug]-answers"])) {
+                echo "<tr><td>Question $qnum blank</td></tr>";
+            }
+            if (isset($rev["$q[slug]"])) {
+                echo "<tr><td>Question $qnum comments</td></tr>";
             }
         }
-        echo '/>';
-        echo '(accepted answers: <code class="';
-        if (!$correctAns) echo 'in';
-        echo 'correct">'.htmlentities($q['solution']).'</code>)';
-    }
-    
-    echo '<table><tbody><tr><td>Comments:</td><td width="100%"><textarea style="width:100%" disabled="disabled">';
-    echo htmlentities($a['comment']);
-    echo '</textarea></td></tr></tbody></table>';
-
-    echo '</div>';
-}
-
-/** renders everything */
-function showUI() {
-    if (array_key_exists("qid", $_GET)) {
-        $sheet = getReviewSheet($_GET['qid']);
-
-        if (array_key_exists("slug", $_GET)) { // show questions to grade
-            $toreview = $sheet[$_GET['slug']];
-            $comments = getGraderComments($_GET['qid'], $_GET['slug']);
-            
-    //        echo '<pre>';
-    //        echo json_encode($toreview, JSON_PRETTY_PRINT);
-    //        echo '</pre>';
-            
-            for($pass=1; $pass<=2; $pass+=1) {
-                foreach($toreview as $student => $answer) {
-                    if ($student == '-') continue;
-                    if (($pass == 2) != array_key_exists($student, $comments['ans'])) continue;
-                    $class = ($pass == 2 ? "question submitted" : "question");
-                    
-                    echo '<div class="'.$class.'" id="q-'.$student.'">';
-                    echo "<a href=\"quiz.php?qid=$_GET[qid]&asuser=$student\" target=\"_blank\">See this student's entire quiz</a><br/>";
-                    showStudentAnswer($student, $toreview['-'], $answer);
-                    
-                    /*
-                    echo '<pre>';
-                    var_dump($student);
-                    var_dump($comments['ans']);
-                    echo '</pre>';
-                    */
-                    
-                    echo "\n<form id='$student-regrade'>\n";
-                    foreach($comments['key'] as $text => $score) {
-                        echo "<input type='radio' name='grade-$student' value='$score;".htmlspecialchars($text)."'";
-                        if ($pass == 2 && $comments['ans'][$student]['comment'] == $text) echo ' checked="checked"';
-                        echo "/>". htmlspecialchars($text)." ($score)<br/>\n";
-                    }
-                    echo "<input type='radio' name='grade-$student' id='other-for-$student' value='(other)'/> Other: <input type='text' name='other-$student' size='40'/> (<input type='text' size='4' name='score-$student'/>)<br/>\n";
-                    echo '<input type="button" value="submit grade" onclick="grade(\''.$student.'\')"/>';
-                    echo "</form>\n";
-                
-                    echo '</div>';
-                    flush();
-                }
-            }
-            
-            
-        } else { // show menu of questions to grade
-            ?><table><tbody><?php
-            foreach($sheet as $slug=>$items) {
-                $comments = getGraderComments($_GET['qid'], $slug);
-                $ratio = ratioGraded_Question($items, $comments);
-                $g = $ratio[0];
-                $t = $ratio[1];
-                $here = htmlspecialchars($_SERVER['REQUEST_URI'].'&slug='.$slug, ENT_QUOTES, 'UTF-8');
-                echo "<tr><td><a href='$here'>$slug</a></td><td>graded</td><td style='text-align:right'>$g</td><td>of</td><td style='text-align:right'>$t</td><td>commented wrong answers</td></tr>";
-                flush();
-            }
-            ?></tbody></table><?php
+        */
+        foreach($rev as $slug=>$val) if (substr($slug,8) == '-answers') {
+            $slug = substr($slug,0,8);
+            echo "<tr><td>blank</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=blank'>$slug</a></td><td";
+            $of = count($val);
+            $sheet = get_blanks($qobj['slug'], $questions[$slug]);
+            $left = 0;
+            foreach($sheet as $obj)
+                if (!isset($obj['decided'])) $left += 1;
+            if ($left == 0) echo ' class="submitted"';
+            echo ">".($of-$left)." of $of";
+            echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
         }
+        foreach($rev as $slug=>$val) if (strlen($slug) == 8) {
+            echo "<tr><td>comment</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=comment'>$slug</a></td><td";
+            $of = count($val);
 
-    } else { // show menu of quizzes to grade
-        // TODO: fix this
+            $sheet = get_comments($qobj['slug'], $slug);
+            $left = 0;
+            foreach($sheet as $uid=>$obj)
+                if (!is_array($obj)) $left += 1;
+
+            if ($left == 0) echo ' class="submitted"';
+            echo ">".($of-$left)." of $of";
+            echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
+            //$done = isset($rev["$slug-done"]) ? count($rev["$slug-done"]) : 0;
+            //if ($of <= $done) echo ' class="submitted"';
+            //echo '>';
+            //echo "${done} of $of";
+            //echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
+        }
+        ?></tbody></table><?php
     }
-
+} else {
+    foreach(glob('questions/*.md') as $i=>$name) {
+        $name = basename($name,".md");
+        $qobj = qparse($name);
+        if ($sobj['due'] >= time()) continue;
+        echo "<br/><a href='grader.php?qid=$name'>$name: $qobj[title]</a>";
+    }
 }
 
-showUI();
 
 ?></body></html>

@@ -1,27 +1,23 @@
+﻿<!DOCTYPE html>
 <?php 
-require_once "staff.php";
+require_once "tools.php";
 ?>
-﻿<html>
+<html>
 <head>
-    <title>Quiz Viewer</title>
+    <title><?=$metadata['quizname']?> Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <?php if (isset($_GET['view-only'])) { ?>
     <style>
-        ol.options { margin-top:-1em; }
-        ol.options li p { display: inline; }
-        ol.options li { list-style: upper-alpha; }
-        body { background:#ccc; padding-top:1em; }
-        .question { background: white; border-radius:1ex; padding:0ex 1ex; margin:2ex;  }
-        .directions { background: #eee; padding:1ex 1ex; margin:2ex;  }
-        .multiquestion { background: #eee; border-radius:1ex; padding:0.7ex 0.7ex; }
-        .multiquestion + .multiquestion { margin-top:1em; }
-        .submitting { background: #fe7; }
-        .submitted { background: #dfd; }
-        textarea { background-color: inherit; }
-        #clock { position:fixed; right:0px; top:0px; background:#ff7; padding-left:0.5ex; padding-bottom:0.5ex; border-bottom-left-radius:1ex; border-left: 1px solid black; border-bottom: 1px solid black;}
-        .correct { background-color: #bfb; padding: 0ex 1ex; }
-        .incorrect { background-color: #fbb; padding: 0ex 1ex; }
-        .hist { color:#777; min-width: 2em; text-align:right; display:inline-block; }
+        body { background:#fdb; }
+        .directions, .multiquestion { background: #fed;  }
     </style>
+    <?php
+    }
+    ?>
+    <link rel="stylesheet" href="katex/katex.min.css">
+
     <script>
+<?php if (!isset($_GET['view_only'])) { ?>
 function pending(num) {
     if (document.getElementById('q'+num).className != "question submitting")
         document.getElementById('q'+num).className = "question submitting";
@@ -37,10 +33,16 @@ function postAns(name, num) {
     var elems = document.getElementsByName("ans"+num);
     for(var i=0; i<elems.length; i+=1) {
         var elem = elems[i];
-        if (elem.type == 'text' || elem.checked) { ans.answer.push(elem.value); }
+        if (elem.type == 'text' || elem.type == 'textarea')
+            elem.value = elem.value.trim();
+        if (elem.type == 'text' || elem.type == 'textarea' || elem.checked) { ans.answer.push(elem.value); }
     }
     var comm = document.getElementById('comments'+num);
-    if (comm && comm.value) ans['comments'] = comm.value;
+    console.log(comm)
+    if (comm && comm.value) {
+        comm.value = comm.value.trim();
+        ans['comments'] = comm.value;
+    }
     
     
     console.log("sending: ", JSON.stringify(ans));
@@ -52,40 +54,30 @@ function ajaxSend(data, num) {
     if (!("withCredentials" in xhr)) {
         return null;
     }
-    xhr.open("POST", "report.php", true);
+    xhr.open("POST", "quiz_listener.php<?php
+    if (isset($_GET['asuser'])) echo '?asuser='.$_GET['asuser'];
+    ?>", true);
     xhr.withCredentials = true;
     xhr.setRequestHeader("Content-type", 'application/json');
-//    xhr.setRequestHeader("Content-length", data.length);
     xhr.onerror = function() {
         document.getElementById("notice").innerHTML = "auto-check for new data broken";
     }
     xhr.onreadystatechange = function() { 
-        if(xhr.readyState == 4 && xhr.status == 200) {
-            document.getElementById('q'+num).className = "question submitted";
-            console.log("response: " + xhr.responseText);
-        } else {
-            console.log(xhr.readyState, xhr.status, xhr.response);
-        }
-    }
-    /*
-    xhr.onload = function() {
-        if (xhr.responseText.length == 0) {
-            document.getElementById("notice").innerHTML = "this page auto-updates and is the most recent available";
-        } else {
-            var score = xhr.responseText.split("\n")[0];
-            var txt = xhr.responseText.substr(score.length+1);
-            document.getElementById("score").innerHTML = score;
-            if (txt.length == 0) {
-                document.getElementById("notice").innerHTML = "this page auto-updates and is the most recent available";
-            } else if (txt.substr(0,3) == '201') {
-                document.getElementById("notice").innerHTML = "New question available. Reloading...";
-                location.assign("#");
+        if(xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                document.getElementById('q'+num).className = "question submitted";
+                console.log("response: " + xhr.responseText);
             } else {
-                document.getElementById("notice").innerHTML = "auto-check for new data broken";
+                document.getElementById('q'+num).className = "question disconnected";
+                alert("Your latest response failed to arrive at the server.\nThis could be your Netbadge session expiring, or because of the following error message:\n\n"   + JSON.stringify(xhr.responseText));
+                console.log("response: " + xhr.responseText);
             }
+        } else {
+            document.getElementById('q'+num).className = "question disconnected";
+            // alert("Your latest response failed to arrive at the server.\n  This is probably due to Netbadge disconnecting you behind the scenes.\n  We recommend you note any answers that have not turned green, reload the page, and enter them again.\n\nCode: " + xhr.status+"\nDetails: "+xhr.responseText)
+            // console.log("response: " + xhr.responseText);
         }
     }
-    */
     xhr.send(data);
 }
 var due = Date.now();
@@ -110,26 +102,221 @@ function tick() {
         clock.innerHTML = text;
     }
 }
+<?php } // endif !isset($_GET['view_only']) ?>
 function onload() {
-    var remaining = Number(document.getElementById('clock').innerHTML);
-    due += remaining * 1000;
-    timer = setInterval(tick, 1000);
+    if (document.getElementById('clock')) {
+        var remaining = Number(document.getElementById('clock').innerHTML);
+        due += remaining * 1000;
+        timer = setInterval(tick, 1000);
+    }
 }
 
     </script>
 </head>
 <body onload="onload()">
-    <center><a href="<?= $homepage ?>">Return to course page</a></center><?php
+    <a style="text-align:center; display:block;" href="<?= $metadata['homepage'] ?>">Return to course page</a><a href="<?php
+if (isset($_GET['asuser'])) echo '.?asuser='.$user;
+else echo '.';
+?>" style="text-align:center; display:block;">Return to index</a><?php
 
-require_once "qshowlib.php";
+function imgup() {
+    global $user;
+    if (isset($_POST['rot'])) { // image rotation request
+        $slug = $_REQUEST['slug'];
+        echo '<pre>';
+        if (strpos($slug,"/") !== FALSE || strpos($slug,"-") !== FALSE
+        || !file_exists("log/$_GET[qid]/$user-$slug")) {
+            echo "ERROR: malformed request";
+        } else {
+            $finfo = new finfo(FILEINFO_MIME);
+            $dir = "log/$_GET[qid]";
+            $img = "$dir/$user-$slug";
+            $mime = $finfo->file($img);
+            $stdout = array();
+            $retval = 0;
+            $tmp = tempnam($dir,"imgrot");
+            unlink($tmp);
 
-showQuiz($_GET['qid']);
+            $rot = 0;
+            switch($_POST['rot']) {
+                case '⊤': break; // no action needed
+                case '⊣': $rot += 90;
+                case '⊥': $rot += 90;
+                case '⊢': $rot += 90;
+
+                putlog("$_GET[qid]/$user.log", '{"date":"'.date('Y-m-d H:i:s').'","rotation":'.$rot.'}'."\n");
+                if ($mime == 'image/jpeg') {
+                    exec("jpegtran -rotate $rot -outfile $img $img", $stdout, $retval);
+                } else if ($mime == 'image/png') {
+                    exec("gm convert $img -rotate $rot $tmp.png", $stdout, $retval);
+                    if (!$retval) $retval = !rename("$tmp.png", $img);
+                } else {
+                    exec("gm convert $img -rotate $rot $tmp.jpg", $stdout, $retval);
+                    if (!$retval) $retval = !rename("$tmp.jpg", $img);
+                }
+            }
+            if ($retval)
+                echo "ERROR: rotation failed $retval\n  ".implode("\n  ",$stdout);
+            else
+                echo "Rotated image";
+            if (file_exists("$tmp.jpg")) unlink("$tmp.jpg");
+            if (file_exists("$tmp.png")) unlink("$tmp.png");
+        }
+        echo '</pre>';
+    }
+    if (count($_FILES) > 0) {
+        if (!$_GET['qid'] || strpos($_GET['qid'],"/") !== FALSE) {
+            echo "<pre>ERROR: malformed request</pre>";
+        }
+
+        umask(0); // discouraged but important for mkdir
+
+        $dir = "log/".$_GET['qid'];
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        echo '<pre>';
+        foreach($_FILES as $slug=>$fdet) {
+            if (strpos($slug,"/") !== FALSE || strpos($slug,"-") !== FALSE) {
+                echo "ERROR: malformed request";
+                continue;
+            }
+            $name = $fdet['name'];
+            $error = $fdet['error'];
+            $tmp = $fdet['tmp_name'];
+            if ($error == UPLOAD_ERR_INI_SIZE) {
+                echo "ERROR: $name was a larger file than the server can accept";
+                continue;
+            }
+            if ($error == UPLOAD_ERR_FORM_SIZE) {
+                echo "ERROR: $name did not upload because of impossible error number 0";
+                continue;
+            }
+            if ($error == UPLOAD_ERR_PARTIAL) {
+                echo "ERROR: only part of $name was received; please try again.";
+                continue;
+            }
+            if ($error == UPLOAD_ERR_NO_FILE) {
+                echo "ERROR: your browser said it would upload $name, but did not include a file.";
+                continue;
+            }
+            if ($error > UPLOAD_ERR_NO_FILE) {
+                echo "ERROR: $name did not uplaod because of impossible error number ".$error;
+                continue;
+            }
+            if (filesize($tmp) <= 0) {
+                echo "ERROR: $name arrived as an empty file.";
+                continue;
+            }
+            
+            putlog("$_GET[qid]/$user.log", json_encode(array(
+                "date"=>date('Y-m-d H:i:s'),
+                "upload-to" => $slug,
+                "upload-from" => $name
+            ))."\n");
+                
+            if (strpos($name, ".HEIC") || strpos($name, '.heic')
+            || strpos($name, ".HEIF") || strpos($name, '.heif')) {
+                $stdout = array();
+                $retval = 0;
+                exec("heif-convert $tmp $dir/$user-$slug.jpg", $stdout, $retval);
+                if ($retval) {
+                    echo "Failed to convert HEIC file into a usable format. Please try again with a JPEG or PNG";
+                } else {
+                    rename("$dir/$user-$slug.jpg", "$dir/$user-$slug");
+                    chmod("$dir/$user-$slug", 0666);
+                    echo "Received $name and converted to JPEG";
+                }
+
+            } else if (strpos($name, ".PDF") || strpos($name, '.pdf')) {
+                $stdout = array();
+                $retval = 0;
+                exec("gm convert -density 200 $tmp -trim +repage $dir/$user-$slug.jpg", $stdout, $retval);
+                if ($retval) {
+                    echo "Failed to convert PDF file into a usable format. Please try again with a JPEG or PNG";
+                } else {
+                    rename("$dir/$user-$slug.jpg", "$dir/$user-$slug");
+                    chmod("$dir/$user-$slug", 0666);
+                    echo "Received $name and converted to JPEG";
+                }
+            } else if (strpos($fdet['type'], 'image/') === 0 
+            || (strpos($name, ".JPG") || strpos($name, '.jpg'))
+            || (strpos($name, ".JPEG") || strpos($name, '.jpeg'))
+            || (strpos($name, ".PNG") || strpos($name, '.png'))) {
+                if (move_uploaded_file($tmp, "$dir/$user-$slug")) {
+                    chmod("$dir/$user-$slug", 0666);
+                    echo "Received $name";
+                } else {
+                    echo "ERROR: server failed to save $name";
+                }
+            } else {
+                echo "ERROR: Unable to process $name. Please upload an image file.";
+            }
+        }
+        echo '</pre>';
+    }
+}
+
+function showQuiz($qid, $blank = false) {
+    global $user, $metadata, $isstaff;
+    $qobj = qparse($qid);
+    if (isset($qobj['error'])) { echo $qobj['error']; return; }
+    
+    echo "<h1 style='text-align:center'>$qobj[title]</h1>";
+    
+    $sobj = aparse($qobj, $user);
+    if (!$sobj['may_view']) { echo "You may not view this quiz"; return; }
+    
+    
+    if ($sobj['may_submit'] && !$sobj['started'])
+        putLog("$qid/$user.log", '{"date":"'.date('Y-m-d H:i:s').'"}'."\n");
+    if ($sobj['may_submit'])
+        echo "<div id='clock'>$sobj[time_left]</div>";
+
+    $hist = (!$blank && $sobj['may_view_key']) ? histogram($qobj) : false;
+    if ($hist) grade($qobj, $sobj); // annotate with score
+
+   
+    echo "<div class='directions'>$qobj[directions]</div>";
+    
+    if ($qobj['qorder'] == 'shuffle' && $hist === false) {
+        srand(crc32("$user $qobj[slug]"));
+        shuffle($qobj['q']);
+    }
+
+    $qnum = 0;
+    foreach($qobj['q'] as $qg) {
+
+        if ($qobj['qorder'] == 'shuffle' && $hist === false)
+            shuffle($qg['q']);
+
+        if (count($qg['q']) > 1 || $qg['text'])
+            echo '<div class="multiquestion">';
+        if ($qg['text']) echo $qg['text'];
+        foreach($qg['q'] as $q) {
+            $qnum += 1;
+            
+            showQuestion($q, $qid, $qnum, $user, $qobj['comments']
+                ,$qg['text']
+                ,(!$blank && isset($sobj[$q['slug']]))
+                    ? $sobj[$q['slug']]
+                    : array('answer'=>array(),'comments'=>'')
+                ,(!$sobj['may_submit'] && !$blank)
+                ,$hist
+                ,!$blank
+                ,$isstaff || $hist !== false
+                );
+        }
+        if (count($qg['q']) > 1 || $qg['text']) echo '</div>';
+    }
+}
+
+imgup();
+showQuiz($_GET['qid'], isset($_GET['view_only']));
 
 ?>
-<a href="<?php
-if ($_GET['asuser']) echo '.?asuser='.$user;
+<a style="text-align:center; display:block;" href="<?= $metadata['homepage'] ?>">Return to course page</a></center><a href="<?php
+if (isset($_GET['asuser'])) echo '.?asuser='.$user;
 else echo '.';
-?>" style="text-align:center; display:block;">Return to main page</a>
-<center><a href="../">Return to course page</a></center>
+?>" style="text-align:center; display:block;">Return to index</a>
+<!--<center><a href="../">Return to course page</a></center>-->
 </body>
 </html>

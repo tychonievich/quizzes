@@ -1,106 +1,68 @@
 <?php 
 header('Content-Type: text/plain');
 
-if (php_sapi_name() == "cli") {
-    parse_str(implode('&', array_slice($argv, 1)), $_GET);
-} else {
-    require_once "staff.php";
-    if (!$isstaff) {
-        http_response_code(403);
-        echo 'staff use only';
-        exit;
-    }
+require_once "tools.php";
+
+if (!$isstaff) {
+    http_response_code(403);
+    die('staff use only');
 }
 
-require_once "qparse.php";
-require_once "JSON.php";
-require_once "histogram.php";
-JSON::$use = SERVICES_JSON_LOOSE_TYPE;
-
-
-function gradeQuiz($whom, $which, $qs) {
-    $logname = "log/$which/$whom.log";
-    if (!file_exists($logname)) return 0;
-    $answers = getAnswers($logname);
-    if (empty($answers)) return 0;
-    $score = 0;
-    foreach($qs as $key=>$val) {
-        foreach($val['parts'] as $key2=>$part) {
-            if (array_key_exists($part['slug'], $answers))
-                $score += grade($part, $answers[$part['slug']]);
-            else
-                $score += grade($part, NULL);
-        }
-    }
-    return $score;
-}
-
-function showOne($number) {
-    $number = pathinfo($number, PATHINFO_FILENAME);
-    $fname="questions/$number.md";
-    if (!file_exists($fname)) return;
-    $qs = array();
-    $h = qparse($fname, $qs);
+function showOne($qid) {
+    $qobj = qparse($qid);
+    if ($qobj['due'] > time() || $qobj['keyless']) return;
     
-    if (strtotime($h['due']) > time()) return;
+    $outof = 0; foreach($qobj['q'] as $mq) foreach($mq['q'] as $q) $outof += $q['points'];
 
-    $outof = 0;
-    foreach($qs as $key=>$val) {
-        foreach($val['parts'] as $key2=>$part) {
-            $outof += $part['points'];
-        }
-    }
-
-    echo "compid,Quiz $number [$outof],comments\n";
+    echo "compid,Quiz $qid [$outof],comments\n";
     
-    foreach(glob("log/$number/*.log") as $j=>$logname) {
+    foreach(glob("log/$qid/*.log") as $j=>$logname) {
         $student = pathinfo($logname, PATHINFO_FILENAME);
-        if (!preg_match('/^[a-z]*[0-9][a-z]*$/', $student)) continue;
-        $score = gradeQuiz($student, $number, $qs);
+        if (!preg_match('/^[a-z]*[0-9][a-z]*$/', $student)) continue; // needed?
+        $score = grade($qobj, $student)*$outof;
         echo "$student,$score,\n";
     }
+}
+
+function showAll() {
+    $took = array();
+    $qids = array();
+
+    echo "compid";
+    foreach(glob("questions/*.md") as $i=>$fname) {
+        $qid = pathinfo($fname, PATHINFO_FILENAME);
+        $qobj = qparse($qid);
+        
+        if ($qobj['due'] > time() || $qobj['keyless']) continue;
+        $qids[] = $qid;
+        
+        $outof = 0; foreach($qobj['q'] as $mq) foreach($mq['q'] as $q) $outof += $q['points'];
+        $worth[$qid] = $outof;
+
+        echo ",Quiz $qid [$outof]";
+        
+        foreach(glob("log/$qid/*.log") as $j=>$logname) {
+            $student = pathinfo($logname, PATHINFO_FILENAME);
+            if (!preg_match('/^[a-z]*[0-9][a-z]*$/', $student)) continue; // needed?
+            if (!array_key_exists($student, $took)) $took[$student] = array();
+
+            $sid = $student;
+            $took[$sid][$qid] = grade($qobj, $student)*$outof;
+        }
+    }
+    
+    foreach($took as $compid=>$scores) {
+        echo "\n$compid";
+        foreach($qids as $qid) {
+            echo ",".(isset($scores[$qid])? $scores[$qid] : 0);
+        }
+    }
+    echo "\n";
 }
 
 if (array_key_exists('quiz', $_GET)) {
     showOne($_GET['quiz']);
 } else {
-    $took = array();
-    echo "compid";
-    foreach(glob("questions/*.md") as $i=>$fname) {
-        $qs = array();
-        $h = qparse($fname, $qs);
-        if (strtotime($h['due']) > time()) continue;
-
-        $outof = 0;
-        foreach($qs as $key=>$val) {
-            foreach($val['parts'] as $key2=>$part) {
-                $outof += $part['points'];
-            }
-        }
-
-        $number = pathinfo($fname, PATHINFO_FILENAME);
-        echo ",Q$number [$outof]";
-
-        foreach(glob("log/$number/*.log") as $j=>$logname) {
-            $student = pathinfo($logname, PATHINFO_FILENAME);
-            if (!preg_match('/^[a-z]*[0-9][a-z]*$/', $student)) continue;
-            if (!array_key_exists($student, $took)) {
-                $took[$student] = array();
-            }
-            $took[$student][$number] = gradeQuiz($student, $number, $qs);
-        }
-    }
-    foreach($took as $compid=>$scores) {
-        echo "\n$compid";
-        foreach(glob("questions/*.md") as $i=>$fname) {
-            $number = pathinfo($fname, PATHINFO_FILENAME);
-            if (array_key_exists($number, $scores)) {
-                echo ",".$scores[$number];
-            } else {
-                echo ",";
-            }
-        }
-    }
-    
+    showAll();
 }
 ?>

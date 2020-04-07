@@ -11,9 +11,12 @@ if (php_sapi_name() == "cli") { // let run from commandline for testing
     $user = 'mst3k'; // UVA's reserved "example use only" shibboleth username
     $isstaff = true;
 } else {
-    $user = $_SERVER['PHP_AUTH_USER']; 
+    $user = $_SERVER['PHP_AUTH_USER'];
     $isstaff = in_array($user, $metadata['staff']);
 }
-if ($isstaff && array_key_exists('asuser', $_GET)) { $user = $_GET['asuser']; }
+if ($isstaff && array_key_exists('asuser', $_GET)) {
+    $user = basename($_GET['asuser']); // remove slashes
+    $isstaff = in_array($user, $metadata['staff']);
+}
 
 ?>

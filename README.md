@@ -10,8 +10,10 @@ You'll to install [KaTeX](...) if you want math rendering; you'll also need serv
 
 1. `npm install --global katex`
 2. `mkdir katex`
-3. `cp /usr/lib/node_modules/katex/dist/katex.min.css katex/`
-4. `cp -r /usr/lib/node_modeuls/katex/dist/fonts katex/`
+3. `cp /usr/local/lib/node_modules/katex/dist/katex.min.css katex/`
+4. `cp -r /usr/local/lib/node_modeuls/katex/dist/fonts katex/`
+
+(note: `/usr/local/lib/node_modules/` might be `/usr/lib/node_modules/` instead depending on how `npm` is installed).
 
 ### Markdown
 

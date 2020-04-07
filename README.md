@@ -4,8 +4,6 @@ This repository contains an online quizzing tool, designed for and tested on UVA
 
 This directory needs to be in a place apache can find it.
 
-You'll need to give Apache read/write access to `log/` and `cache/`.
-
 ### KaTeX
 
 You'll to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
@@ -19,7 +17,7 @@ You'll to install [KaTeX](...) if you want math rendering; you'll also need serv
 
 You'll need a copy of [Markdown.php](https://github.com/michelf/php-markdown/tree/lib/Michelf) as well.
 
-6. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf`{.sh}
+5. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf`{.sh}
 6. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownExtra.php" -P Michelf`{.sh}
 7. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownInterface.php" -P Michelf`{.sh}
 

@@ -4,6 +4,9 @@ This repository contains an online quizzing tool, designed for and tested on UVA
 
 This directory needs to be in a place apache can find it.
 
+You'll need to give apache write-access to the `log/` and `cache/` subdirectories.
+This can be done by, e.g. `chmod 777 log/ cache/` or `chown www-data log/ cache/`, etc.
+
 ### KaTeX
 
 You'll to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.

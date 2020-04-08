@@ -415,7 +415,8 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
         $earn = $sobj[$slug]['grade'];
     }
     
-    if ($q['type'] == 'text' || $q['type'] == 'box') {
+    if ($q['type'] == 'image') return FALSE;
+    else if ($q['type'] == 'text' || $q['type'] == 'box') {
         if (!isset($q['key'])) return FALSE;
 
         if ($hist !== FALSE && !isset($hist[$slug]))

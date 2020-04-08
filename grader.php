@@ -86,7 +86,7 @@ function show_blanks($quizid, $q, $mq) {
     $anum = 0;
     foreach(get_blanks($quizid, $q) as $opt => $details) {
         $anum += 1;
-        echo "<div class='question";
+        echo "<div class='multiquestion";
         if (isset($details['decided'])) echo " submitted";
         echo "' id='q-$anum'>Reply: <code style='font-size:150%; border: thin solid gray'>";
         echo htmlentities($opt)."</code> – ".count($details['users'])." replies";
@@ -123,6 +123,7 @@ function show_comments($quizid, $q, $mq) {
             ,false
             );
         $score = isset($sobj[$q['slug']]['score']) ? $sobj[$q['slug']]['score'] : 0;
+        if ($q['points']) $score /= $q['points'];
         $rawscore = $score;
         $feedback = '';
         if (isset($details['grade'])) $score = $details['grade'];
@@ -159,16 +160,16 @@ var quizid = <?=json_encode(isset($_GET['qid']) ? $_GET['qid'] : null)?>;
 var slug = <?=json_encode(isset($_GET['slug']) ? $_GET['slug'] : null)?>;
 
 function pending(num) {
-    if (document.getElementById('q-'+num).className != "question submitting")
-        document.getElementById('q-'+num).className = "question submitting";
+    if (document.getElementById('q-'+num).className != "multiquestion submitting")
+        document.getElementById('q-'+num).className = "multiquestion submitting";
 }
 
 
 function setKey(id, val) {
-    document.getElementById('q-'+id).className = 'question submitting';
+    document.getElementById('q-'+id).className = 'multiquestion submitting';
     let v = Number(document.getElementById('a-'+id).value);
     if (isNaN(v) || v<0 || v>1) {
-        document.getElementById('q-'+id).className = 'question disconnected';
+        document.getElementById('q-'+id).className = 'multiquestion disconnected';
         return
     }
     let datum = {
@@ -184,12 +185,12 @@ function setKey(id, val) {
 }
 
 function setComment(id) {
-    document.getElementById('q-'+id).className = 'question submitting';
+    document.getElementById('q-'+id).className = 'mulitquestion submitting';
     let v = document.getElementById('a-'+id).value;
     if (v != '') {
         v = Number(v)
         if (isNaN(v) || v<0 || v>1) {
-            document.getElementById('q-'+id).className = 'question disconnected';
+            document.getElementById('q-'+id).className = 'multiquestion disconnected';
             return
         }
     }
@@ -223,7 +224,7 @@ function ajaxSend(data, id) {
         if(xhr.readyState == 4) {
             console.log("done", xhr);
             if (xhr.status == 200) {
-                document.getElementById('q-'+id).className = "question submitted";
+                document.getElementById('q-'+id).className = "multiquestion submitted";
                 console.log("response: " + xhr.responseText);
             }
         }

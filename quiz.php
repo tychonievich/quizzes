@@ -277,7 +277,7 @@ function showQuiz($qid, $blank = false) {
    
     echo "<div class='directions'>$qobj[directions]</div>";
     
-    if ($qobj['qorder'] == 'shuffle' && $hist === false) {
+    if ($qobj['qorder'] == 'shuffle' && $hist === false && !$isstaff) {
         srand(crc32("$user $qobj[slug]"));
         shuffle($qobj['q']);
     }
@@ -285,7 +285,7 @@ function showQuiz($qid, $blank = false) {
     $qnum = 0;
     foreach($qobj['q'] as $qg) {
 
-        if ($qobj['qorder'] == 'shuffle' && $hist === false)
+        if ($qobj['qorder'] == 'shuffle' && $hist === false && !$isstaff)
             shuffle($qg['q']);
 
         if (count($qg['q']) > 1 || $qg['text'])

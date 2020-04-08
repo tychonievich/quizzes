@@ -628,7 +628,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
                 echo "</div>";
             }
             echo "<input type='$q[type]' name='ans$qnum' value='$opt[slug]' $subm";
-            if (isset($replied['answer']) && in_array($opt['slug'], $replied['answer'])) echo " checked";
+            if (isset($replied['answer']) && in_array($opt['slug'], $replied['answer'])) echo " checked='checked'";
             echo "/>";
             echo "<div>$opt[text]</div>";
             echo "</label>";

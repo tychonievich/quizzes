@@ -96,7 +96,10 @@ function show_blanks($quizid, $q, $mq) {
             if ($weight > $score) $score = $weight;
         }
         if (isset($details['decided'])) $score = $details['decided'];
-        echo "<p>Points: <input type='text' id='a-$anum' value='$score' onblur='setKey(\"$anum\",".json_encode($opt).")' onkeydown='pending($\"$anum\")'/></p>";
+        echo "<p>Points: <input type='text' id='a-$anum' value='$score' onchange='setKey(\"$anum\",".json_encode($opt).")' onkeydown='pending($\"$anum\")'/>";
+        if (!isset($details['decided']))
+            echo "<input type='button' onclick='setKey(\"$anum\",".json_encode($opt).")' id='delme-$anum' value='no reply needed'/>";
+        echo "</p>";
         echo "</div>";
     }
 }
@@ -113,7 +116,8 @@ function show_comments($quizid, $q, $mq) {
         echo "<div class='multiquestion";
         if (isset($details)) echo " submitted";
         echo "' id='q-$user'>$mq[text]";
-        showQuestion($q, $quizid, '', $user, $qobj['comments']
+        echo "<pre>".json_encode($sobj[$q['slug']])."</pre>";
+        showQuestion($q, $quizid, $user, $user, $qobj['comments']
             ,$mq['text']
             ,isset($sobj[$q['slug']]) ? $sobj[$q['slug']]
                 : array('answer'=>array(),'comments'=>'')
@@ -129,12 +133,15 @@ function show_comments($quizid, $q, $mq) {
         if (isset($details['grade'])) $score = $details['grade'];
         if (isset($details['feedback'])) $feedback = $details['feedback'];
         
-        echo "<p>Points: <input type='text' id='a-$user' value='$score' onblur='setComment(\"$user\")' rawscore='$rawscore' onkeydown='pending(\"$user\")'/></p>";
+        echo "<p>Points: <input type='text' id='a-$user' value='$score' onchange='setComment(\"$user\")' rawscore='$rawscore' onkeydown='pending(\"$user\")'/></p>";
         
-        echo "<div class='tinput'><span>Feedback:</span><textarea id='r-$user' onblur='setComment(\"$user\")' onkeydown='pending(\"$user\")'";
+        echo "<div class='tinput'><span>Feedback:</span><textarea id='r-$user' onchange='setComment(\"$user\")' onkeydown='pending(\"$user\")'";
         echo ">";
         echo htmlentities($feedback);
         echo "</textarea></div>";
+
+        if (!isset($details))
+            echo "<input type='button' onclick='setComment(\"$user\")' id='delme-$user' value='no reply needed'/>";
 
         echo '</div>';
     }
@@ -181,11 +188,13 @@ function setKey(id, val) {
     }
     console.log(datum);
     ajaxSend(datum, id);
-    // fixme: send to ajax
+
+    let tmp = document.getElementById('delme-'+id)
+    if (tmp) tmp.remove();
 }
 
 function setComment(id) {
-    document.getElementById('q-'+id).className = 'mulitquestion submitting';
+    document.getElementById('q-'+id).className = 'multiquestion submitting';
     let v = document.getElementById('a-'+id).value;
     if (v != '') {
         v = Number(v)
@@ -207,6 +216,9 @@ function setComment(id) {
     }
     console.log(datum);
     ajaxSend(datum, id);
+
+    let tmp = document.getElementById('delme-'+id)
+    if (tmp) tmp.remove();
 }
 
 function ajaxSend(data, id) {

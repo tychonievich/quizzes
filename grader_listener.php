@@ -15,7 +15,7 @@ if ($data['kind'] == 'reply') {
         'slug'=>$data['slug'],
         'grade'=>$data['score'],
         'feedback'=>$data['reply'],
-    )));
+    ))."\n");
     if (file_exists("log/$data[quiz]/hist.json"))
         unlink("log/$data[quiz]/hist.json"); // grades changed
 } else if ($data['kind'] == 'key') {

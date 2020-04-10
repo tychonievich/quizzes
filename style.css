@@ -35,3 +35,7 @@ thead tr:last-child { border-bottom: thin black solid; }
 th { text-align:left;  padding:0ex 1ex; }
 tbody tr:nth-child(2n+1) { background-color:#ddd; }
 td { padding:1ex; }
+
+.question th,td { padding: 0.25ex 1ex; }
+.question table { width: auto; margin:auto; }
+.question tbody tr:nth-child(2n+1) { background-color:#eee; }

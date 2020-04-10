@@ -9,7 +9,7 @@ This can be done by, e.g. `chmod 777 log/ cache/` or `chown www-data log/ cache/
 
 ### KaTeX
 
-You'll to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
+You'll need to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
 
 1. `npm install --global katex`
 2. `mkdir katex`
@@ -17,6 +17,8 @@ You'll to install [KaTeX](...) if you want math rendering; you'll also need serv
 4. `cp -r /usr/local/lib/node_modeuls/katex/dist/fonts katex/`
 
 (note: `/usr/local/lib/node_modules/` might be `/usr/lib/node_modules/` instead depending on how `npm` is installed).
+
+Currently, I run KaTeZ server-side only. It works client-side too, and I might add a client-side option to the configuration `course.json` in a future release.
 
 ### Markdown
 
@@ -244,3 +246,19 @@ Most questions will be autograded, but human input is sometimes needed
     - adjustments are performed on a per-student basis
 - image uploads are not autograded
 
+## Staff special options
+
+A few options are only available by staff editing URLs directly
+
+- If you are staff and add `asuser=mst3k` as a query parameter (e.g. `quiz.php?quid=03&asuser=mst3k`), then you'll see the page `mst3k` sees, including their answers, etc.
+- If you are staff and add `showkey` as a query parameter (e.g., `quiz.php?quid=03&showkey`) then you'll be able to see the key even before the quiz closes.
+
+## Known bugs
+
+At least some commented wrong answers are not showing up in the grading view. Most are; I only have one example that is not. Still trying to debug it.
+
+## Future extensions
+
+- Make server- vs client-side rendering of KaTeX configurable
+- Permit gap between close and key release for extra time students on fixed-time quizzes
+- Add student-view grading as well as question-view grading

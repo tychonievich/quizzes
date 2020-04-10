@@ -116,7 +116,6 @@ function show_comments($quizid, $q, $mq) {
         echo "<div class='multiquestion";
         if (isset($details)) echo " submitted";
         echo "' id='q-$user'>$mq[text]";
-        echo "<pre>".json_encode($sobj[$q['slug']])."</pre>";
         showQuestion($q, $quizid, $user, $user, $qobj['comments']
             ,$mq['text']
             ,isset($sobj[$q['slug']]) ? $sobj[$q['slug']]

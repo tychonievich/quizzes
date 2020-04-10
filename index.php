@@ -24,6 +24,10 @@ require_once "tools.php";
 foreach(glob('questions/*.md') as $i=>$name) {
     $name = basename($name,".md");
     $qobj = qparse($name);
+    if (isset($qobj['error'])) {
+        echo "<tr><td colspan='6' class='disconnected'>ERROR parsing $name: <tt>".htmlentities(json_encode($qobj['error']))."</tt></td></tr>";
+        continue;
+    }
     $sobj = aparse($qobj, $user);
     echo '<tr><td>';
     if ($sobj['may_view']) {

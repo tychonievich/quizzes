@@ -6,7 +6,7 @@ require_once "tools.php";
 <head>
     <title><?=$metadata['quizname']?> Viewer</title>
     <link rel="stylesheet" href="style.css">
-    <?php if (isset($_GET['view-only'])) { ?>
+    <?php if (isset($_GET['view_only'])) { ?>
     <style>
         body { background:#fdb; }
         .directions, .multiquestion { background: #fed;  }
@@ -259,11 +259,15 @@ function showQuiz($qid, $blank = false) {
     global $user, $metadata, $isstaff;
     $qobj = qparse($qid);
     if (isset($qobj['error'])) { echo $qobj['error']; return; }
-    
+
     echo "<h1 style='text-align:center'>$qobj[title]</h1>";
     
     $sobj = aparse($qobj, $user);
     if (!$sobj['may_view']) { echo "You may not view this quiz"; return; }
+
+    if ($isstaff && isset($_GET['showkey'])) {
+        $sobj['may_view_key'] = true;
+    }
     
     
     if ($sobj['may_submit'] && !$sobj['started'])

@@ -78,13 +78,22 @@ function all_grades($pad = FALSE, &$rubric=FALSE) {
 }
 
 /** Experimental and dangerous: creates, and overrides if present, "$prefix$slug/$user/.grade" */
-function post_grades($prefix) { // FIXME: add $prefix$slug/.rubric too
+function post_grades($prefix, $special=array()) {
     global $metadata;
     $rubrics = array();
     foreach(all_grades(true, $rubrics) as $qid => $users) {
-        if ($qid['keyless']) continue;
+        if (qparse($qid)['keyless']) continue;
+        if (isset($special[$qid]) && !$special[$qid]) continue;
         
-        file_put_contents_recursive("$prefix$qid/.rubric",  json_encode(array(
+        $dir = "$prefix$qid/";
+        $qname = "$metadata[quizname] $qid";
+        
+        if (isset($special[$qid])) {
+            $dir = dirname($prefix)."/$special[$qid]/";
+            $qname = "$special[$qid]";
+        }
+        
+        file_put_contents_recursive("$dir.rubric",  json_encode(array(
             "kind"=>"hybrid",
             "late-penalty"=>1,
             "auto-weight"=>0,
@@ -94,13 +103,9 @@ function post_grades($prefix) { // FIXME: add $prefix$slug/.rubric too
         foreach($users as $user=>$human) {
             //if ($user != 'lat7h') continue;
             if ($human === false ) {
-                echo "writing blank $prefix$qid/$user/.grade\n";
-                //continue;
-                file_put_contents_recursive("$prefix$qid/$user/.grade", '{"kind":"percentage","ratio":0,"comments":"did not take '."$metadata[quizname] $qid".'"}');
+                file_put_contents_recursive("$dir$user/.grade", '{"kind":"percentage","ratio":0,"comments":"did not take '.$qname.'"}');
             } else {
-                echo "writing full $prefix$qid/$user/.grade\n";
-                //continue;
-                file_put_contents_recursive("$prefix$qid/$user/.grade",
+                file_put_contents_recursive("$dir$user/.grade",
                 json_encode(array(
                     "kind"=>"hybrid",
                     "auto"=>1,
@@ -117,16 +122,13 @@ function post_grades($prefix) { // FIXME: add $prefix$slug/.rubric too
 
 if (php_sapi_name() == "cli") { // command line
     // record as grades
-    post_grades("../uploads/OQ");
+    post_grades("../uploads/Quiz", array('exam2'=>'Exam2', 'labs'=>false));
 } else if (basename(__FILE__) == basename($_SERVER['SCRIPT_FILENAME'])) {
     // display
     header('Content-Type: text/plain; charset=utf-8'); 
     echo json_encode(all_grades(), JSON_PRETTY);
-} else if (php_sapi_name() == "cli") { // command line
-    // record as grades
-    post_grades("../uploads/OQ");
 } else {
-    // nothing
+    // show nothing, just define the functions
 }
 
 

@@ -559,7 +559,40 @@ function putlog($name, $line) {
 
 function _optcmp($a,$b) { return strnatcasecmp($a['text'], $b['text']); }
 
+
+$vulgar_fractions = array(
+    1 => '⊤',
+    7/8 => '⅞', 
+    5/6 => '⅚', 
+    4/5 => '⅘', 
+    3/4 => '¾', 
+    2/3 => '⅔', 
+    5/8 => '⅝', 
+    3/5 => '⅗', 
+    1/2 => '½', 
+    2/5 => '⅖', 
+    3/8 => '⅜', 
+    1/3 => '⅓', 
+    1/4 => '¼', 
+    1/5 => '⅕', 
+    1/6 => '⅙', 
+    1/7 => '⅐', 
+    1/8 => '⅛', 
+    1/9 => '⅑', 
+    1/10 => '⅒', 
+    0 => ' ',
+);
+/// rounds down to a unicode vulgar fraction symbol; 0 = ' ' and 1 = '⊤'
+function fractionOf($num) {
+    global $vulgar_fractions;
+    foreach($vulgar_fractions as $n=>$c) {
+        if ($n >= $num) return $c;
+    }
+    return ' ';
+}
+
 function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false){
+    global $metadata;
     $postcall = "postAns(".htmlspecialchars(json_encode($quizid)).", $qnum)";
     
     echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
@@ -624,7 +657,9 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
                 echo "</div>";
                 echo "<div style='flex-basis: 1.5em; text-align:right; flex-grow:0; flex-shrink:0; color:green;'>";
                 if ($q['type'] == 'checkbox') echo $opt['points'] > 0 ? '⊤' : '';
-                else echo $opt['points'] == 1 ? '⊤' : ($opt['points'] > 0 ? '½' : '');
+                else echo $metadata['detailed-partial'] 
+                    ? fractionOf($opt['points']) 
+                    : ($opt['points'] == 1 ? '⊤' : ($opt['points'] > 0 ? '½' : ''));
                 echo "</div>";
             }
             echo "<input type='$q[type]' name='ans$qnum' value='$opt[slug]' $subm";

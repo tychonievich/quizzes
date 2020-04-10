@@ -262,3 +262,7 @@ At least some commented wrong answers are not showing up in the grading view. Mo
 - Make server- vs client-side rendering of KaTeX configurable
 - Permit gap between close and key release for extra time students on fixed-time quizzes
 - Add student-view grading as well as question-view grading
+- Add "drop this question for this student" grading option
+- Add "this question is in topic X" for specification grading and ABET evaluation
+- Add "this quiz can replace that other one" for specification grading
+- Add randomized question pools

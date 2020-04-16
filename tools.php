@@ -489,13 +489,11 @@ function grade($qobj, &$sobj, &$review=FALSE, &$hist=FALSE) {
     $outof = 0;
     foreach($qobj['q'] as $qg) {
         foreach($qg['q'] as $q) {
-            if (isset($sobj[$q['slug'] ])) {
-                $earn = gradeQuestion($q, $sobj, $review, $hist);
-                if ($earn !== FALSE) {
-                    $earned += $earn * $q['points'];
-                    $outof += $q['points'];
-                }
-            } else gradeQuestion($q, $sobj, $review, $hist);
+            $earn = gradeQuestion($q, $sobj, $review, $hist);
+            if ($earn !== FALSE) {
+                $earned += $earn * $q['points'];
+                $outof += $q['points'];
+            }
         }
     }
     $sobj['score'] = $outof ? $earned / $outof : 0;

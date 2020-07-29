@@ -14,7 +14,21 @@ require_once "tools.php";
     <?php
     }
     ?>
+    
     <link rel="stylesheet" href="katex/katex.min.css">
+    <script type="text/javascript" src="katex/katex.min.js"></script>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('span.mymath').forEach(x => 
+                katex.render(x.innerText, x, 
+                    {throwOnError:false, displayMode:false})
+            )
+            document.querySelectorAll('div.mymath').forEach(x => 
+                katex.render(x.innerText, x, 
+                    {throwOnError:false, displayMode:true})
+            )
+        });
+    </script>
 
     <script>
 <?php if (!isset($_GET['view_only'])) { ?>

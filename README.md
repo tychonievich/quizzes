@@ -7,9 +7,24 @@ This directory needs to be in a place apache can find it.
 You'll need to give apache write-access to the `log/` and `cache/` subdirectories.
 This can be done by, e.g. `chmod 777 log/ cache/` or `chown www-data log/ cache/`, etc.
 
-### KaTeX
+### Dependencies
 
-You'll need to install [KaTeX](...) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
+You'll need a copy of KaTeX and of Michelf's Markdown.
+
+#### Automatic
+
+Run `bash .htgetDeps.sh` -- this should download all needed dependencies for you.
+
+#### Manual KaTeX
+
+You'll need to install [KaTeX](https://github.com/KaTeX/KaTeX) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
+
+Two modes of KaTeX handling are supported;
+client-side (the default) and server-side.
+
+##### Server-side installation
+
+Set `"server-side KaTeX":true` in `course.json` and run
 
 1. `npm install --global katex`
 2. `mkdir katex`
@@ -18,9 +33,20 @@ You'll need to install [KaTeX](...) if you want math rendering; you'll also need
 
 (note: `/usr/local/lib/node_modules/` might be `/usr/lib/node_modules/` instead depending on how `npm` is installed).
 
-Currently, I run KaTeZ server-side only. It works client-side too, and I might add a client-side option to the configuration `course.json` in a future release.
+##### Client-side installation
 
-### Markdown
+Set `"server-side KaTeX":false` in `course.json` and download and extract [the latest release of KaTeX](https://github.com/KaTeX/KaTeX/releases/latest).
+After extraction, there should be at least the following in your main quizzes directory:
+
+```
+└── katex
+    ├── fonts
+    │   ... many files here
+    ├── katex.min.css
+    └── katex.min.js
+```
+
+#### Manual Markdown
 
 You'll need a copy of [Markdown.php](https://github.com/michelf/php-markdown/tree/lib/Michelf) as well.
 
@@ -39,6 +65,7 @@ You'll need to customize the course information in `course.json`
 - `"quizname"` will be used to identify quizzes to users
 - `"staff"` is a list of login IDs who have pre-open viewing and grade adjusting powers
 - `"time_mult"` is a mapping of user IDs and multipliers to add to their quiz time limits, for students who get extra time on tests
+- `"server-side KaTeX"` should be set to `false` unless you have a compelling reason not to want client-side math rendering
 
 ## Creating Quizzes
 
@@ -257,12 +284,14 @@ A few options are only available by staff editing URLs directly
 
 At least some commented wrong answers are not showing up in the grading view. Most are; I only have one example that is not. Still trying to debug it.
 
+We had some vague bug reports that the time limit on images might be "partially enforced". Not sure what that means
+
 ## Future extensions
 
-- Make server- vs client-side rendering of KaTeX configurable
-- Permit gap between close and key release for extra time students on fixed-time quizzes
-- Add student-view grading as well as question-view grading
-- Add "drop this question for this student" grading option
-- Add "this question is in topic X" for specification grading and ABET evaluation
-- Add "this quiz can replace that other one" for specification grading
-- Add randomized question pools
+- [x] Make server- vs client-side rendering of KaTeX configurable
+- [ ] Permit gap between close and key release for extra time students on fixed-time quizzes
+- [ ] Add student-view grading as well as question-view grading
+- [ ] Add "drop this question for this student" grading option
+- [ ] Add "this question is in topic X" for specification grading and ABET evaluation
+- [ ] Add "this quiz can replace that other one" for specification grading
+- [ ] Add randomized question pools

@@ -10,6 +10,7 @@ Cool, huh?
 
 Question
 What is $\sum_{i=2}{3} i$?
+Note that it looks different if you say $$\sum_{i=2}{3} i$$ instead.
 
 key: 5
 
@@ -53,3 +54,49 @@ On a piece of paper, write by hand the following for-loop ten times
         ans += i
 
 Scan or take a picture of your paper and upload it here.
+
+ex: Once you enter explanation mode, you stay there until you start a new question:
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i
+
+    ans = 0
+    for i in range(10):
+        ans += i

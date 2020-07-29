@@ -46,10 +46,16 @@ function katexify($txt, $display=false) {
 }
 
 function katexify_inline($txt) {
-    return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
+    if ($metadata['server-side KaTeX'])
+        return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
+    else
+        return '<span class="mymath">{\\displaystyle{'.$txt[1].'}}</span>';
 }
 function katexify_display($txt) {
-    return katexify(html_entity_decode($txt[1]), true);
+    if ($metadata['server-side KaTeX'])
+        return katexify(html_entity_decode($txt[1]), true);
+    else
+        return '<div class="mymath">'.$txt[1].'</div>';
 }
 
 /// performs Markdown -> HTML and KaTeX transformations

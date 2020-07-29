@@ -51,7 +51,8 @@ foreach(glob('questions/*.md') as $i=>$name) {
     if (!$sobj['may_view']) {
         echo "not yet open";
     } else if ($sobj['may_view_key']) {
-        $score = grade($qobj, $sobj);
+        $sid = $sobj['slug'];
+        $score = grade($qobj, $sid);
         if (!$sobj['started']) echo "did not take";
         else echo round(100*$score,2)."%";
         $hist = histogram($qobj);

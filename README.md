@@ -66,6 +66,7 @@ You'll need to customize the course information in `course.json`
 - `"staff"` is a list of login IDs who have pre-open viewing and grade adjusting powers
 - `"time_mult"` is a mapping of user IDs and multipliers to add to their quiz time limits, for students who get extra time on tests
 - `"server-side KaTeX"` should be set to `false` unless you have a compelling reason not to want client-side math rendering
+- `"detailed-partial"`, if `true` will show partial credit as vulgar fractions like ⅜; without, all partial is shown just as ½
 
 ## Creating Quizzes
 

@@ -49,7 +49,8 @@ function katexify_inline($txt) {
     if ($metadata['server-side KaTeX'])
         return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
     else
-        return '<span class="mymath">{\\displaystyle{'.$txt[1].'}}</span>';
+        return '<span class="mymath">`{\\displaystyle{'.$txt[1].'}}`</span>';
+        // note: backticks prevent \{ turning into {, but also mean ` cannot appear
 }
 function katexify_display($txt) {
     if ($metadata['server-side KaTeX'])

@@ -46,6 +46,7 @@ function katexify($txt, $display=false) {
 }
 
 function katexify_inline($txt) {
+    global $metadata;
     if ($metadata['server-side KaTeX'])
         return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
     else
@@ -144,8 +145,8 @@ function qparse($qid) {
             $is_option = preg_match('/^\*?[a-zA-Z]\./', $line);
             $is_q = beginsWith($line, 'Question');
             $is_sq = beginsWith($line, 'Subquestion');
-            $is_qexp = beginsWith($line, 'ex: ');
-            $is_oexp = beginsWith($line, 'ex. ');
+            $is_qexp = beginsWith($line, 'ex: ') || trim($line) == 'ex:';
+            $is_oexp = beginsWith($line, 'ex. ') || trim($line) == 'ex.';
             $is_header = $is_mq || $is_q || $is_sq;
             $is_text = !$is_header && !$is_key && !$is_option && !$is_oexp && !$is_qexp;
 

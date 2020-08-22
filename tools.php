@@ -54,6 +54,7 @@ function katexify_inline($txt) {
         // note: backticks prevent \{ turning into {, but also mean ` cannot appear
 }
 function katexify_display($txt) {
+    global $metadata;
     if ($metadata['server-side KaTeX'])
         return katexify(html_entity_decode($txt[1]), true);
     else
@@ -64,10 +65,14 @@ function katexify_display($txt) {
 /// does $math$ and $$math$$ first, then markdown, then \\(math\\) and \\[math\\]
 /// time consuming because of the katex calls, but only if there is math in the page (otherwise quite fast)
 function toHTML($md) {
+    global $metadata;
     $md = preg_replace_callback('/\$\$(.*?)\$\$/s', 'katexify_display', $md);
     $md = preg_replace_callback('/\$(.*?)\$/s', 'katexify_inline', $md);
     $html = MarkdownExtra::defaultTransform($md);
-    $matches = array();
+    if (!$metadata['server-side KaTeX']) {
+        $html = preg_replace('/(<span class="mymath">)<code>(.*?)<\/code>(<\/span>)/s', '$1$2$3', $html);
+        $html = preg_replace('/(<div class="mymath">)<code>(.*?)<\/code>(<\/div>)/s', '$1$2$3', $html);
+    }
     $html = preg_replace_callback('/\&#92;\[(.*?)\&#92;\]/s', 'katexify_display', $html);
     $html = preg_replace_callback('/\&#92;\((.*?)\&#92;\)/s', 'katexify_inline', $html);
     return $html;
@@ -692,7 +697,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "<div class='tinput'><span>Answer:</span><input type='text' name='ans$qnum' $subm";
         if (isset($replied['answer'][0])) echo " value='".htmlentities($replied['answer'][0])."'";
         echo "/></div>";
-        if ($hist) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
+        if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
     } else if ($q['type'] == 'image') {
         // no time limit in images, so always show form even if not may_submit
         if ($ajax) {

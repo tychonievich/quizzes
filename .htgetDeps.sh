@@ -11,7 +11,7 @@ if grep 'server-side' course.json | grep -q true
 then
     echo ======== Getting server-side KaTeX ========
 
-    npm install --global katex
+    sudo npm install --global katex
     echo
     if [ ! -d katex ]
     then

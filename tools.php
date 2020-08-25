@@ -61,6 +61,13 @@ function katexify_inline($txt) {
         return '<span class="mymath">`{\\displaystyle{'.$txt[1].'}}`</span>';
         // note: backticks prevent \{ turning into {, but also mean ` cannot appear
 }
+function katexify_inline2($txt) {
+    global $metadata;
+    if ($metadata['server-side KaTeX'])
+        return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
+    else
+        return '<span class="mymath">{\\displaystyle{'.$txt[1].'}}</span>';
+}
 function katexify_display($txt) {
     global $metadata;
     if ($metadata['server-side KaTeX'])
@@ -82,7 +89,7 @@ function toHTML($md) {
         $html = preg_replace('/(<div class="mymath">)<code>(.*?)<\/code>(<\/div>)/s', '$1$2$3', $html);
     }
     $html = preg_replace_callback('/\&#92;\[(.*?)\&#92;\]/s', 'katexify_display', $html);
-    $html = preg_replace_callback('/\&#92;\((.*?)\&#92;\)/s', 'katexify_inline', $html);
+    $html = preg_replace_callback('/\&#92;\((.*?)\&#92;\)/s', 'katexify_inline2', $html);
     return $html;
 }
 function toInlineHTML($md) {
@@ -102,10 +109,11 @@ function qparse($qid,$abspath=FALSE) {
     global $_qparse, $metadata;
     if (is_array($qid)) return $qid;
     if (isset($_qparse[$qid])) return $_qparse[$qid];
+    error_log("!!! $qid [".($abspath?"yes":"no")."]");
     if ($abspath && file_exists($qid)) {
         $filename = $qid;
         // $qid = basename($qid, ".md");
-        $cache = FALSE;
+        $cache = $filename.".cache";
     } else {
         if (stristr($qid, "/")) return $_qparse[$qid] = array('error'=>"no quiz named $qid");
         $filename = "questions/$qid.md";

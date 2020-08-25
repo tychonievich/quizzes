@@ -98,13 +98,19 @@ $_qparse = array();
  * 
  * Returns an array containing just the key 'error' if it cannot parse "questions/$qid.md"
  */
-function qparse($qid) {
+function qparse($qid,$abspath=FALSE) {
     global $_qparse, $metadata;
     if (is_array($qid)) return $qid;
     if (isset($_qparse[$qid])) return $_qparse[$qid];
-    if (stristr($qid, "/")) return $_qparse[$qid] = array('error'=>"no quiz named $qid");
-    $filename = "questions/$qid.md";
-    $cache = "cache/$qid.json";
+    if ($abspath && file_exists($qid)) {
+        $filename = $qid;
+        // $qid = basename($qid, ".md");
+        $cache = FALSE;
+    } else {
+        if (stristr($qid, "/")) return $_qparse[$qid] = array('error'=>"no quiz named $qid");
+        $filename = "questions/$qid.md";
+        $cache = "cache/$qid.json";
+    }
     if (!file_exists($filename)) return $_qparse[$qid] = array('error'=>"no quiz named $qid");
     $updated = filemtime($filename);
     if (file_exists($cache) && filemtime($cache) > $updated)
@@ -376,8 +382,10 @@ function qparse($qid) {
         $ans['slug'] = $qid;
         
         // cache results
-        file_put_contents_recursive($cache, json_encode($ans, JSON_PRETTY));
-        chmod($cache, 0666);
+        if ($cache) {
+            file_put_contents_recursive($cache, json_encode($ans, JSON_PRETTY));
+            chmod($cache, 0666);
+        }
     } while ($updated != filemtime($filename));
     return $_qparse[$qid] = $ans;
 }

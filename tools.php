@@ -611,33 +611,33 @@ function _optcmp($a,$b) { return strnatcasecmp($a['text'], $b['text']); }
 
 
 $vulgar_fractions = array(
-    1 => '⊤',
-    7/8 => '⅞', 
-    5/6 => '⅚', 
-    4/5 => '⅘', 
-    3/4 => '¾', 
-    2/3 => '⅔', 
-    5/8 => '⅝', 
-    3/5 => '⅗', 
-    1/2 => '½', 
-    2/5 => '⅖', 
-    3/8 => '⅜', 
-    1/3 => '⅓', 
-    1/4 => '¼', 
-    1/5 => '⅕', 
-    1/6 => '⅙', 
-    1/7 => '⅐', 
-    1/8 => '⅛', 
-    1/9 => '⅑', 
-    1/10 => '⅒', 
-    0 => ' ',
+    '⊤' => 1,
+    '⅞' => 7/8, 
+    '⅚' => 5/6, 
+    '⅘' => 4/5, 
+    '¾' => 3/4, 
+    '⅔' => 2/3, 
+    '⅝' => 5/8, 
+    '⅗' => 3/5, 
+    '½' => 1/2, 
+    '⅖' => 2/5, 
+    '⅜' => 3/8, 
+    '⅓' => 1/3, 
+    '¼' => 1/4, 
+    '⅕' => 1/5, 
+    '⅙' => 1/6, 
+    '⅐' => 1/7, 
+    '⅛' => 1/8, 
+    '⅑' => 1/9, 
+    '⅒' => 1/10, 
+    ' ' => 0,
 );
+//sort($vulgar_fractions);
 /// rounds down to a unicode vulgar fraction symbol; 0 = ' ' and 1 = '⊤'
 function fractionOf($num) {
     global $vulgar_fractions;
-    foreach($vulgar_fractions as $n=>$c) {
-        if ($n >= $num) return $c;
-    }
+    foreach($vulgar_fractions as $c=>$n)
+        if ($n <= $num) return $c;
     return ' ';
 }
 

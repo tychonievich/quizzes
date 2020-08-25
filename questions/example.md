@@ -29,7 +29,7 @@ What would you like on your sandwich?
 a. meat
 *a. cheese
 *h. peanut butter
-*a. bannana
+*a. banana
 X. mustard
 
 ex: as we discussed in class, there is only one good sandwich (and mustard doesn't matter)
@@ -43,7 +43,7 @@ a. my home
 ex. I'm very private and won't tell you where I live
 w.8 the classroom
 ex. Can do, but technically eating in the classroom is against the rules
-*a. the cafateria
+*a. the cafeteria
 *a. my office
 
 Question img
@@ -54,6 +54,12 @@ On a piece of paper, write by hand the following for-loop ten times
         ans += i
 
 Scan or take a picture of your paper and upload it here.
+
+rubric:
+a. has ten (or more) hand-written copies
+h. each is the same loop
+h. no syntax errors
+X. neatly written
 
 ex: Once you enter explanation mode, you stay there until you start a new question:
 
@@ -100,3 +106,4 @@ ex: Once you enter explanation mode, you stay there until you start a new questi
     ans = 0
     for i in range(10):
         ans += i
+

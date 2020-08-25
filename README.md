@@ -107,7 +107,7 @@ What would you like on your sandwich?
 a. meat
 *a. cheese
 *h. peanut butter
-*a. bannana
+*a. banana
 X. mustard
 
 ex: as we discussed in class, there is only one good sandwich (and mustard doesn't matter)
@@ -121,7 +121,7 @@ a. my home
 ex. I'm very private and won't tell you where I live
 w.8 the classroom
 ex. Can do, but technically eating in the classroom is against the rules
-*a. the cafateria
+*a. the cafeteria
 *a. my office
 
 Question img
@@ -273,6 +273,34 @@ Most questions will be autograded, but human input is sometimes needed
 - if comments are enabled (`comments: true` header) then commented answers that did not receive full credit will be logged for human review
     - adjustments are performed on a per-student basis
 - image uploads are not autograded
+- questions with a `rubric` are not autograded
+
+### Rubrics
+
+This is an incomplete extension under active development:
+
+- [x] parse rubrics in quiz definition files
+- [ ] display grade ranges before grading
+- [ ] display "not yet graded"
+- [ ] grading interface shows rubric
+- [ ] graded rubric displated to students
+- [ ] multiple graders on same question supported without collisions
+
+If a question has a line `rubric:`, following material will be taken as part of the rubric as follows:
+
+- If there is text following `rubric:`, it will be made a rubric item
+
+- [Question Options](#question-options) syntax will create rubric items;
+	note that `*` is ignored.
+	As with options, `x` discards an item and `X` shows it but gives is 0 weight (same as w.0).
+	Extra-weight options are not currently supported; decrease the weight of other items instead.
+	
+	Weights will be normalized and do not need to add up to point weight, but must not sum to zero.
+
+If there is a rubric, then the question is ungraded until a human grades it.
+Post-autograde pre-human grade, the quiz grade shows as a grade range, as e.g. "3--7 / 8 (37--88%)"
+and the question shows "(not yet graded)"
+
 
 ## Staff special options
 

@@ -8,6 +8,14 @@ use Michelf\MarkdownExtra as MarkdownExtra;
 require_once "authenticate.php";
 define("JSON_PRETTY", JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
+// polyfill
+if( !function_exists('array_key_last') ) {
+    function array_key_last(array $array) {
+        if( !empty($array) ) return key(array_slice($array, -1, 1, true));
+    }
+}
+
+
 function beginsWith($haystack, $needle) {
     return 0 === strncasecmp($haystack, $needle, strlen($needle));
 }
@@ -152,8 +160,9 @@ function qparse($qid) {
             $is_sq = beginsWith($line, 'Subquestion');
             $is_qexp = beginsWith($line, 'ex: ') || trim($line) == 'ex:';
             $is_oexp = beginsWith($line, 'ex. ') || trim($line) == 'ex.';
+            $is_rubric = beginsWith($line, 'rubric:');
             $is_header = $is_mq || $is_q || $is_sq;
-            $is_text = !$is_header && !$is_key && !$is_option && !$is_oexp && !$is_qexp;
+            $is_text = !$is_header && !$is_key && !$is_option && !$is_oexp && !$is_qexp && !$is_rubric;
 
             if ($is_key) { 
                 // key: text
@@ -181,11 +190,19 @@ function qparse($qid) {
                     continue;
                 } else { $is_text = true; }
             }
+            if ($is_rubric) {
+                if ($q !== FALSE) {
+                    $q['rubric'] = array(trim(substr($line,7)));
+                    continue;
+                } else { $is_text = true; }
+            }
             if ($is_text) {
                 if (isset($opt['explain'])) $opt['explain'] .= $line;
                 else if (isset($q['explain'])) $q['explain'] .= $line;
                 else if ($opt !== FALSE) {
                     $opt['text'] .= $line;
+                } else if (isset($q['rubric'])) {
+                    $q['rubic'][0] .= $line;
                 } else if ($q !== FALSE) {
                     $q['text'] .= $line;
                 } else if ($mq !== FALSE) {
@@ -196,11 +213,23 @@ function qparse($qid) {
                 continue;
             }
             if ($opt !== FALSE) {
-                $opt['pin'] = stripos($opt['text'], 'of the above') !== FALSE;
+                if (!isset($q['rubric']))
+                    $opt['pin'] = stripos($opt['text'], 'of the above') !== FALSE;
                 $opt['text'] = toHTML($opt['text']);
                 if (isset($opt['explain']))
                     $opt['explain'] = toHTML($opt['explain']);
-                $options[] = $opt;
+                if (isset($q['rubric'])) {
+                    if (is_string($q['rubric'][0])) {
+                        if (strlen(trim($q['rubric'][0])) > 0)
+                            $q['rubric'][0] = array(
+                                'text'=>toHTML($q['rubric'][0]),
+                                'hide'=>false,
+                                'points'=>1,
+                            );
+                        else array_pop($q['rubric']);
+                    }
+                    $q['rubric'][] = $opt;
+                } else $options[] = $opt;
                 $opt = FALSE;
             }
             if ($is_option) { // parse multiple-choice option text
@@ -208,7 +237,17 @@ function qparse($qid) {
                 $opt = array('text'=>$bit[1]);
                 $bit = $bit[0];
                 $opt['hide'] = ($bit[0] == 'x' || $bit[1] == 'x');
-                if ($q['type'] == 'radio') {
+                if (isset($q['rubric'])) {
+                    // a. weight 1 
+                    // h. weight 0.5
+                    // w.85 weight 0.85
+                    // x. X. weight 0
+                    // * meaningless
+                    if ($bit[0] == 'h') $opt['points'] = 0.5;
+                    else if ($bit[0] == 'w') $opt['points'] = floatval('0'.substr($bit,1));
+                    else if ($bit[0] == 'x' || $bit[0] == 'X') $opt['points'] = 0;
+                    else $opt['points'] = 1;
+                } else if ($q['type'] == 'radio') {
                     // *a. this gets full points
                     // h. this gets half points
                     // w.85 this gets 0.85 points
@@ -216,7 +255,7 @@ function qparse($qid) {
                     if ($bit[0] == 'h') $opt['points'] = 0.5;
                     else if ($bit[0] == 'w') $opt['points'] = floatval('0'.substr($bit,1));
                     else if ($bit[0] == '*') $opt['points'] = 1.0;
-                    else if ($bit[0] == 'x' || $bit[0] == 'X') $opt['points'] = 1.0; // fixme?
+                    else if ($bit[0] == 'x' || $bit[0] == 'X') $opt['points'] = 1; // fixme?
                     else $opt['points'] = 0;
                 } else { // checkbox
                     // *a. select this, full weight

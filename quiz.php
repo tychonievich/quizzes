@@ -281,6 +281,7 @@ function showQuiz($qid, $blank = false) {
 
     if ($isstaff && isset($_GET['showkey'])) {
         $sobj['may_view_key'] = true;
+        echo "<center class='count'>".count(glob("log/$qid/*.log"))." people have viewed this quiz</center>";
     }
     
     

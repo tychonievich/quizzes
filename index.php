@@ -21,9 +21,18 @@ require_once "tools.php";
     <tr><th>Task</th><th>Title</th><th>Open</th><th>Close</th><th style="text-align:center">Time</th><th style="text-align:center">Status</th></tr>
 </thead><tbody>
 <?php
-foreach(glob('questions/*.md') as $i=>$name) {
-    $name = basename($name,".md");
+
+$qsortting = array();
+foreach(glob('questions/*.md') as $f) {
+    $name = basename($f,".md");
     $qobj = qparse($name);
+    $qsortting[$qobj['due'].'-'.$name] = array($name, $qobj);
+}
+ksort($qsortting);
+foreach($qsortting as $i=>$qpair) {
+    $name = $qpair[0];
+    $qobj = $qpair[1];
+
     if (isset($qobj['error'])) {
         echo "<tr><td colspan='6' class='disconnected'>ERROR parsing $name: <tt>".htmlentities(json_encode($qobj['error']))."</tt></td></tr>";
         continue;
@@ -48,7 +57,7 @@ foreach(glob('questions/*.md') as $i=>$name) {
     echo "<td align=center>".durationString($sobj['time_left'])."</td>";
 
     echo "<td align=center>";
-    if (!$sobj['may_view']) {
+    if (!$sobj['may_view'] || $qobj['open'] > time()) {
         echo "not yet open";
     } else if ($sobj['may_view_key']) {
         $sid = $sobj['slug'];

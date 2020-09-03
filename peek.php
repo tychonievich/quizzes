@@ -38,7 +38,6 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
     foreach(glob('questions/*.md') as $i=>$name) {
         $name = basename($name,".md");
         $qobj = qparse($name);
-        if ($sobj['due'] >= time()) continue;
         echo "<br/><a href='?qid=$name'>$name: $qobj[title]</a>";
     }
 } else {
@@ -67,6 +66,11 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
             foreach($q['options'] as $opt)
                 $slug2html[$opt['slug']] = $opt['text'];
 
+        if (file_exists('log/names.json')) {
+            $users = json_decode(file_get_contents('log/names.json'),true);
+        } else {
+            $users = array();
+        }
         
         ?><table><thead><tr><th>User</th><th>Answer</th><th>Comment</th></tr></thead>
         <tbody><?php
@@ -76,7 +80,12 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
             $a = aparse($qobj, $user);
             if (!isset($a[$slug])) continue;
             
-            echo "<tr><td>$user</td><td>";
+            echo "<tr><td>$user";
+            if (isset($users[$user])) {
+                echo " – ";
+                echo $users[$user];
+            }
+            echo "</td><td>";
             foreach($a[$slug]['answer'] as $ans) {
                 echo '<div class="answer">';
                 if (isset($slug2html[$ans])) echo $slug2html[$ans];

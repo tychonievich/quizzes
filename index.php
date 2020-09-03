@@ -94,5 +94,8 @@ foreach($qsortting as $i=>$qpair) {
 </tbody></table>
 <script>document.getElementById('delme').remove()</script>
 <center><a href="<?= $metadata['homepage'] ?>">Return to course page</a></center>
+<?php if ($isstaff) { ?>
+<p>As course staff, you can see hidden and draft quizzes and <a href="peek.php">look at all student responses</a>.</p>
+<?php } ?>
 </body>
 </html>

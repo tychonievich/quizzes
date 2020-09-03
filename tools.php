@@ -109,7 +109,7 @@ function qparse($qid,$abspath=FALSE) {
     global $_qparse, $metadata;
     if (is_array($qid)) return $qid;
     if (isset($_qparse[$qid])) return $_qparse[$qid];
-    error_log("!!! $qid [".($abspath?"yes":"no")."]");
+    //error_log("!!! $qid [".($abspath?"yes":"no")."]");
     if ($abspath && file_exists($qid)) {
         $filename = $qid;
         // $qid = basename($qid, ".md");

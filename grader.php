@@ -158,7 +158,20 @@ function show_comments($quizid, $q, $mq) {
     <title>Grade <?=$metadata['quizname']?> <?=isset($_GET['qid']) ? $_GET['qid'] : ''?></title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="katex/katex.min.js"></script>
     <link rel="stylesheet" href="katex/katex.min.css">
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('span.mymath').forEach(x => 
+                katex.render(x.innerText, x, 
+                    {throwOnError:false, displayMode:false})
+            )
+            document.querySelectorAll('div.mymath').forEach(x => 
+                katex.render(x.innerText, x, 
+                    {throwOnError:false, displayMode:true})
+            )
+        });
+    </script>
 
 
 

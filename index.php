@@ -4,6 +4,7 @@ require_once "tools.php";
 ﻿<html>
 <head>
     <title><?=$metadata['quizname']?> Index</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,6 +27,10 @@ $qsortting = array();
 foreach(glob('questions/*.md') as $f) {
     $name = basename($f,".md");
     $qobj = qparse($name);
+    if (!$isstaff && (
+        $qobj['draft'] || 
+        ($qobj['hide'] && !file_exists("log/$name/$user.log"))
+    )) continue; // unlist
     $qsortting[$qobj['due'].'-'.$name] = array($name, $qobj);
 }
 ksort($qsortting);

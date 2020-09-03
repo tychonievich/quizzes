@@ -6,6 +6,7 @@ require_once "tools.php";
 <head>
     <title>Practice Quizzes</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         body { background:#fdb; }
         .directions, .multiquestion { background: #fed;  }

@@ -135,6 +135,8 @@ function qparse($qid,$abspath=FALSE) {
             "comments"=>true,
             "keyless"=>false,
             "order"=>"shuffle",
+            "hide"=>false,
+            "draft"=>false,
         );
         
         $fh = fopen($filename, 'rb');
@@ -445,7 +447,8 @@ function aparse($qobj, $sid) {
     global $metadata;
     $now = time();
     // view any open quiz, even if time's up
-    $ans['may_view'] = in_array($sid, $metadata['staff']) || $qobj['open'] <= $now;
+    $ans['may_view'] = in_array($sid, $metadata['staff']) 
+        || ($qobj['open'] <= $now && !$qobj['draft']);
     // view key of any non-keyless past-due quiz
     $ans['may_view_key'] = $qobj['due'] < $now && !$qobj['keyless'];
     $time_left = $qobj['seconds'];

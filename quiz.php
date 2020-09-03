@@ -5,6 +5,7 @@ require_once "tools.php";
 <html>
 <head>
     <title><?=$metadata['quizname']?> Viewer</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
     <?php if (isset($_GET['view_only'])) { ?>
     <style>

@@ -156,6 +156,7 @@ function show_comments($quizid, $q, $mq) {
 ?><!DOCTYPE html><html>
     <head>
     <title>Grade <?=$metadata['quizname']?> <?=isset($_GET['qid']) ? $_GET['qid'] : ''?></title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="katex/katex.min.css">
 

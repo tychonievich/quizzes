@@ -790,7 +790,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "<div class='tinput'><span>Comments:</span><textarea id='comments$qnum' onchange='$postcall' onkeydown='pending($qnum)'";
         if ($disable) echo " disabled='disabled'";
         echo ">";
-        echo htmlentities($replied['comments']);
+        if (isset($replied['comments'])) echo htmlentities($replied['comments']);
         echo "</textarea></div>";
     }
     

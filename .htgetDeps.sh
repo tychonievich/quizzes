@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo ======== Ensuring www-data write access to directories ========
+
+chmod 777 log cache && echo 'Succcess!' || echo 'Failure! Results not recorded until fixed'
+
 echo ======== Getting Michelf\'s Markdown processor ========
 
 wget -nc "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf

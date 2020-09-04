@@ -719,11 +719,13 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
             echo "<li";
             if ($hist && isset($hist[$q['slug']]) && $q['type'] == 'checkbox' && !$opt['points']) echo ' style="text-decoration:line-through; opacity:0.35"';
             echo "><label>";
-            if ($hist && isset($hist[$q['slug']])) {
-                echo "<div style='flex-basis: 2.8em; text-align:right; flex-grow:0; flex-shrink:0;'>";
-                if (isset($hist[$q['slug']][$opt['slug']]))
-                    echo round(100*$hist[$q['slug']][$opt['slug']] / $hist[$q['slug']]['total'])."%";
-                echo "</div>";
+            if ($hist) {
+                if (isset($hist[$q['slug']])) {
+                    echo "<div style='flex-basis: 2.8em; text-align:right; flex-grow:0; flex-shrink:0;'>";
+                    if (isset($hist[$q['slug']][$opt['slug']]))
+                        echo round(100*$hist[$q['slug']][$opt['slug']] / $hist[$q['slug']]['total'])."%";
+                    echo "</div>";
+                }
                 echo "<div style='flex-basis: 1.5em; text-align:right; flex-grow:0; flex-shrink:0; color:green;'>";
                 if ($q['type'] == 'checkbox') echo $opt['points'] > 0 ? '⊤' : '';
                 else echo $metadata['detailed-partial'] 

@@ -282,11 +282,13 @@ Most questions will be autograded, but human input is sometimes needed
 This is an incomplete extension under active development:
 
 - [x] parse rubrics in quiz definition files
+- [x] graded rubric displayed to students
+    - assumes `{"slug":"318c8248","feedback":"","rubric":[1,0,0.5]}`{.json} format (just those three keys, just list-of-numb grade)
+- [ ] grading interface shows rubric
+- [ ] multiple graders on same question supported without collisions
+
 - [ ] display grade ranges before grading
 - [ ] display "not yet graded"
-- [ ] grading interface shows rubric
-- [ ] graded rubric displated to students
-- [ ] multiple graders on same question supported without collisions
 
 If a question has a line `rubric:`, following material will be taken as part of the rubric as follows:
 

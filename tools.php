@@ -415,11 +415,16 @@ function aparse($qobj, $sid) {
         if ($fh) while(($jsdata = fgets($fh)) !== FALSE) {
             $obj = json_decode($jsdata, TRUE);
             if ($obj === null) continue;
-            if (isset($obj['grade'])) { // grader override
+            if (isset($obj['rubric'])) { // grader information
                 $slug = $obj['slug'];
-                if (!isset($ans[$slug])) continue;
+                $ans[$slug]['feedback'] = $obj['feedback'];
+                $ans[$slug]['rubric'] = $obj['rubric'];
+            } else if (isset($obj['grade'])) { // grader override
+                $slug = $obj['slug'];
+                //if (!isset($ans[$slug])) continue;
                 $ans[$slug]['grade'] = $obj['grade'];
                 $ans[$slug]['feedback'] = $obj['feedback'];
+                if (isset($obj['rubric'])) $ans[$slug]['rubric'] = $obj['rubric'];
             } else { // student action
                 if (isset($obj['answer'])) { // student answer
                     $show = array('answer'=>$obj['answer']);
@@ -486,7 +491,22 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
         $earn = $sobj[$slug]['grade'];
     }
     
-    if ($q['type'] == 'image') return FALSE;
+    if (isset($q['rubric'])) {
+        if (!isset($sobj[$slug]['rubric'])) return FALSE;
+        if ($hist !== FALSE && !isset($hist[$slug]))
+            $hist[$slug] = array('right'=>0,'total'=>0);
+        if (!$graded) {
+            $earn = 0;
+            $of = 0;
+            foreach($q['rubric'] as $i=>$obj) {
+                $of += $obj['points'];
+                if (isset($sobj[$slug]['rubric'][$i]))
+                    $earn += $obj['points']*$sobj[$slug]['rubric'][$i];
+            }
+            
+            $earn /= $of;
+        }
+    } else if ($q['type'] == 'image') return FALSE;
     else if ($q['type'] == 'text' || $q['type'] == 'box') {
         if (!isset($q['key'])) return FALSE;
 
@@ -670,12 +690,12 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     echo "<strong>Question $qnum</strong>";
     if (!$q['points']) {
         echo " (dropped)";
-    } else if ($hist && isset($replied['score']) && $q['type'] != 'image') {
+    } else if ($hist && isset($replied['score'])) {
         echo " (".round($replied['score'],2)." / $q[points] pt";
         if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
             echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
         else echo ")";
-    } else if ($hist && $q['type'] != 'image') {
+    } else if ($hist && !isset($q['rubric']) && $q['type'] != 'image') {
         echo " ($q[points] pt";
         if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
             echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
@@ -738,7 +758,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
             echo "/>";
             echo "<div>$opt[text]</div>";
             echo "</label>";
-            if ($hist && $unshuffle && isset($opt['explain']))
+            if ($hist && isset($opt['explain']))
                 echo "<div class='explanation'>$opt[explain]</div>";
             echo "</li>";
         }
@@ -782,9 +802,23 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "<strong>ERROR: quiz data malformed (unknown type $q[type])</strong>";
     }
     
-    if ($hist && $unshuffle && isset($q['explain']))
+    if ($hist && isset($q['explain']))
         echo "<div class='explanation'>$q[explain]</div>";
 
+    if ($hist && isset($q['rubric'])) {
+        echo '<div class="explanation"><p><strong>Rubric:</strong></p>';
+        foreach($q['rubric'] as $i=>$item) {
+            echo "<div class='rubric-item'><div style='flex-basis: 1.5em; flex-grow:0; flex-shrink:0; color:green;'>";
+            if (isset($replied['rubric'][$i])) {
+                $p = $replied['rubric'][$i];
+                echo $p >= 1 ? '☑' : ($p <= 0 ? '☐' : '½');
+            } else echo '•';
+            echo "</div><div>";
+            echo $item['text'];
+            echo "</div></div>";
+        }
+        echo "<p><small>(☑/½/☐ means full/partial/no credit earned on this item; • means not yet graded)</small></p></div>";
+    }
     
     if ($comments && $ajax && (!$disable || isset($replied['comments']) && $replied['comments'])) {
         echo "<div class='tinput'><span>Comments:</span><textarea id='comments$qnum' onchange='$postcall' onkeydown='pending($qnum)'";

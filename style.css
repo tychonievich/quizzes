@@ -1,5 +1,5 @@
 ol.options { margin-top:-0.5em; }
-ol.options p { margin: 0; padding: 0; }
+ol.options p, .rubric-item p { margin: 0; padding: 0; }
 ol.options > li { list-style: upper-alpha; }
 body { background:#ccc; padding-top:1em; }
 .question { background: white; border-radius:1ex; padding:0ex 1ex; margin:2ex;  }
@@ -15,6 +15,8 @@ textarea { background-color: inherit; }
 .incorrect { background-color: #fbb; padding: 0ex 1ex; }
 .hist { color:#777; min-width: 2em; text-align:right; display:inline-block; }
 .katex .base { margin: 0.5ex auto; }
+
+.rubric-item { display: flex; align-items: center; }
 
 img.preview { vertical-align: middle; max-height: 10em; box-shadow: 0 0 0.5ex 0.25ex grey; }
 

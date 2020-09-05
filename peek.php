@@ -16,12 +16,12 @@ require_once "tools.php";
     <script type="text/javascript" src="columnsort.js"></script>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll('span.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+            document.querySelectorAll('span.mymath').forEach(x =>
+                katex.render(x.innerText, x,
                     {throwOnError:false, displayMode:false})
             )
-            document.querySelectorAll('div.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+            document.querySelectorAll('div.mymath').forEach(x =>
+                katex.render(x.innerText, x,
                     {throwOnError:false, displayMode:true})
             )
         });
@@ -30,7 +30,7 @@ require_once "tools.php";
         div.answer p:last-child { margin-bottom: 0; }
     </style>
     </head>
-<body onload="hookAllTables()"><?php 
+<body onload="hookAllTables()"><?php
 
 // list quizzes, questions, or answers
 if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
@@ -71,15 +71,15 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
         } else {
             $users = array();
         }
-        
+
         ?><table><thead><tr><th>User</th><th>Answer</th><th>Comment</th></tr></thead>
         <tbody><?php
-        
+
         foreach(glob("log/$_GET[qid]/*.log") as $path) {
             $user=basename($path, '.log');
             $a = aparse($qobj, $user);
             if (!isset($a[$slug])) continue;
-            
+
             echo "<tr><td>$user";
             if (isset($users[$user])) {
                 echo " – ";
@@ -92,15 +92,21 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
                 else echo htmlentities($ans);
                 echo '</div>';
             }
+            if (file_exists("log/$_GET[qid]/$user-$slug")) {
+                echo "<div style='display:inline-block; font-size:2em;'><a onclick='spin(\"img-$user\",-90)'>↶</a><br/><a onclick='spin(\"img-$user\",90)'>↷</a></div>";
+                echo "<div id='img-$user' style='display:inline-block'>";
+                echo "<img class='preview' src='imgshow.php?asuser=$user&qid=$_GET[qid]&slug=$q[slug]'/>";
+                echo "</div>";
+            }
             echo "</td><td>";
             echo '<div class="comments">';
             echo htmlentities($a[$slug]['comments']);
             echo '</div>';
             echo "</td></tr>";
         }
-        
+
         ?></tbody></table><?php
-        
+
     } else {
         ?><style type="text/css">
         a { text-decoration: none !important; color:inherit !important; }
@@ -116,12 +122,44 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
             echo $q['text'];
             echo '</div>';
             if ($mqs[$slug]['text']) echo '</div>';
-            echo "</a>";
+            echo "</a> ";
         }
     }
-    
+
 }
 
-
-
-?></body></html>
+?>
+<script type="text/javascript">
+/// CSS transforms don't impact bounding boxes, so this depends on
+/// a wrapper around the item to rotate to fix that.
+function setRot(deg, bucket, img) {
+    let h = img.clientHeight,
+        w = img.clientWidth,
+        m = Math.min(w,h),
+        M = Math.max(w,h);
+    if (deg%180 == 0) {
+        bucket.style.width = 'auto';
+        bucket.style.height = 'auto';
+    } else {
+        bucket.style.width = h+'px';
+        bucket.style.height = w+'px';
+    }
+    img.style.transform = 'rotate('+deg+'deg)';
+    if (deg == 90 || deg == -270)
+        img.style.transformOrigin = (h/2)+'px '+(h/2)+'px'
+    if (deg == 180 || deg == -180)
+        img.style.transformOrigin = 'center'
+    if (deg == 270 || deg == -90)
+        img.style.transformOrigin = (w/2)+'px '+(w/2)+'px'
+}
+/// dir should be ±90 -- +90 for CW, -90 for CCW
+function spin(id, dir) {
+    let e = document.getElementById(id);
+    let i = e.firstElementChild;
+    let r = e.getAttribute('rot') || 0
+    r = ((0|r)+dir)%360;
+    setRot(r, e, i);
+    e.setAttribute('rot', r);
+}
+</script>
+</body></html>

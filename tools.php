@@ -325,7 +325,7 @@ function qparse($qid,$abspath=FALSE) {
             }
             if (!$is_sq) { // done with question group
                 if ($mq !== FALSE) {
-                    if (strlen($mq['text']) == 0) $mq['text'] = False;
+                    if (!isset($mq['text']) || strlen($mq['text']) == 0) $mq['text'] = False;
                     else $mq['text'] = toHTML($mq['text']);
                     $all[] = $mq; 
                 }

@@ -492,20 +492,31 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
     }
     
     if (isset($q['rubric'])) {
-        if (!isset($sobj[$slug]['rubric'])) return FALSE;
+        if (!isset($sobj[$slug]['rubric'])) {
+            if ($review !== FALSE)
+                $review["$slug-pending"][] = $sobj['slug'];
+            return FALSE;
+        }
         if ($hist !== FALSE && !isset($hist[$slug]))
             $hist[$slug] = array('right'=>0,'total'=>0);
         if (!$graded) {
             $earn = 0;
             $of = 0;
+            $finished = true;
             foreach($q['rubric'] as $i=>$obj) {
+                if ($obj['hide']) continue;
                 $of += $obj['points'];
                 if (isset($sobj[$slug]['rubric'][$i]))
                     $earn += $obj['points']*$sobj[$slug]['rubric'][$i];
+                else $finished = false;
             }
-            
             $earn /= $of;
-        }
+            if ($review !== FALSE) {
+                if ($finished) $review["$slug-graded"][] = $sobj['slug'];
+                else $review["$slug-pending"][] = $sobj['slug'];
+            }
+        } else if ($review !== FALSE)
+            $review["$slug-graded"][] = $sobj['slug'];
     } else if ($q['type'] == 'image') return FALSE;
     else if ($q['type'] == 'text' || $q['type'] == 'box') {
         if (!isset($q['key'])) return FALSE;
@@ -596,7 +607,7 @@ function histogram($qobj, &$review=FALSE) {
     global $metadata;
     if (is_string($qobj)) $qobj = qparse($qobj);
     if (isset($_histogram[$qobj['slug']])) return $_histogram[$qobj['slug']];
-    $cache_hist = "log/$qobj[slug]/hist.json";
+    $cache_hist = "cache/$qobj[slug]-hist.json";
     if (file_exists($cache_hist)) { // only saves 10 ms in my example run
         $cachetime = filemtime($cache_hist);
         $use_cache = $cachetime > filemtime("questions/$qobj[slug].md");
@@ -623,8 +634,8 @@ function histogram($qobj, &$review=FALSE) {
     }
     file_put_contents_recursive($cache_hist, json_encode($hist, JSON_PRETTY));
     chmod($cache_hist, 0666);
-    file_put_contents_recursive("log/$qobj[slug]/review.json", json_encode($review, JSON_PRETTY));
-    chmod("log/$qobj[slug]/review.json", 0666);
+    file_put_contents_recursive("cache/$qobj[slug]-review.json", json_encode($review, JSON_PRETTY));
+    chmod("cache/$qobj[slug]-review.json", 0666);
     return $_histogram[$qobj['slug']] = $hist;
 }
 
@@ -770,7 +781,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "<div class='tinput'><span>Answer:</span><textarea name='ans$qnum' $subm>";
         if (isset($replied['answer'][0])) echo htmlentities($replied['answer'][0]);
         echo "</textarea></div>";
-        if ($hist) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
+        if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
     } else if ($q['type'] == 'text') {
         $subm = $disable ? "disabled='disabled'" : ($ajax ? "onchange='$postcall' onkeydown='pending($qnum)'" : '');
 
@@ -808,6 +819,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     if ($hist && isset($q['rubric'])) {
         echo '<div class="explanation"><p><strong>Rubric:</strong></p>';
         foreach($q['rubric'] as $i=>$item) {
+            if ($item['hide']) continue;
             echo "<div class='rubric-item'><div style='flex-basis: 1.5em; flex-grow:0; flex-shrink:0; color:green;'>";
             if (isset($replied['rubric'][$i])) {
                 $p = $replied['rubric'][$i];

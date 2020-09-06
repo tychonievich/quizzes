@@ -284,11 +284,8 @@ This is an incomplete extension under active development:
 - [x] parse rubrics in quiz definition files
 - [x] graded rubric displayed to students
     - assumes `{"slug":"318c8248","feedback":"","rubric":[1,0,0.5]}`{.json} format (just those three keys, just list-of-numb grade)
-- [ ] grading interface shows rubric
-- [ ] multiple graders on same question supported without collisions
-
-- [ ] display grade ranges before grading
-- [ ] display "not yet graded"
+- [x] grading interface shows rubric
+- [x] multiple graders on same question supported without collisions
 
 If a question has a line `rubric:`, following material will be taken as part of the rubric as follows:
 
@@ -300,6 +297,14 @@ If a question has a line `rubric:`, following material will be taken as part of 
 	Extra-weight options are not currently supported; decrease the weight of other items instead.
 	
 	Weights will be normalized and do not need to add up to point weight, but must not sum to zero.
+
+**Bug**: currently, hidden rubric items (`x.`) still have to be graded. There are several places the code needs to change to fix that (display, error-checking, grade array creation, grading).
+
+**Warning**: rubric grading has only been tested with image questions so far, and that only a little. Other bugs likely.
+
+- [ ] display grade ranges before grading
+- [ ] display "not yet graded"
+
 
 If there is a rubric, then the question is ungraded until a human grades it.
 Post-autograde pre-human grade, the quiz grade shows as a grade range, as e.g. "3--7 / 8 (37--88%)"

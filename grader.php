@@ -9,8 +9,8 @@ require_once "tools.php";
 $_review = array();
 function get_review($quizid) {
     if (isset($_review[$quizid])) return $_review[$quizid];
-    if (file_exists("log/$quizid/review.json")) {
-        $ans = json_decode(file_get_contents("log/$quizid/review.json"), true);
+    if (file_exists("cache/$quizid-review.json")) {
+        $ans = json_decode(file_get_contents("cache/$quizid-review.json"), true);
     } else {
         $ans = array();
         histogram($quizid, $ans);
@@ -77,6 +77,46 @@ function get_comments($quizid, $slug) {
     }
     return $ans;
 }
+
+/**
+ * Given a quiz and one of its questions, return an array.
+ * keys are users
+ * values are arrays with two keys:
+ *  "submitted":true/false if image, or their answer array
+ *  "comments":their comments, or null
+ *  "graded":[1,1,0.5] or null
+ *  "feedback":grader comments, or null
+ * 
+ * keys are ordered with ungraded first, shuffled,
+ * then graded after
+ */
+function get_rubrics($quizid, $q) {
+    $slug = $q['slug'];
+    $qobj = qparse($quizid);
+    $rev = get_review($quizid);
+
+    $users = isset($rev["$slug-pending"]) ? $rev["$slug-pending"] : array();
+    shuffle($users);
+    if (isset($rev["$slug-graded"]))
+        $users = array_merge($users, $rev["$slug-graded"]);
+    
+    $ans = array();
+    foreach($users as $user) {
+        $sobj = aparse($qobj, $user);
+        $ans[$user] = array(
+            "submitted" => $q['type'] == 'image' 
+                ? file_exists("log/$quizid/$user-$slug") 
+                : null,
+            "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
+            "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
+            "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null
+        );
+    }
+
+    return $ans;
+}
+
+
 
 function show_blanks($quizid, $q, $mq) {
     $slug = $q['slug'];
@@ -151,6 +191,199 @@ function show_comments($quizid, $q, $mq) {
         });
     </script><?php
 }
+
+
+function show_rubric($quizid, $q, $mq) {
+    global $user;
+    $slug = $q['slug'];
+    echo "<details><summary>Question description (click to toggle view)</summary>";
+    if ($mq['text']) echo "<div class='multiquestion'>$mq[text]";
+    showQuestion($q, $quizid, '', 'none', false, $mq['text'], array(''), true, true, false, true);
+    if ($mq['text']) echo '</div>';
+    echo "</details>";
+
+    $slug2html = array();
+    if (isset($q['options']))
+        foreach($q['options'] as $opt)
+            $slug2html[$opt['slug']] = $opt['text'];
+
+    foreach(get_rubrics($quizid, $q) as $student => $details) {
+        echo "<div class='grade1' id='$student'><div class='submission'>";
+        $ans = $details['submitted'];
+//echo "<pre>".__LINE__." ".json_encode($details)."</pre>";
+        if (!$ans) echo '(left blank)';
+        else if ($ans === true)
+            echo "<a onclick='reveal(\"$student\")'>view image</a>";
+        else {
+            echo '<div class="answer">';
+            if (isset($slug2html[$ans])) echo $slug2html[$ans];
+            else echo htmlentities($ans);
+            echo '</div>';
+        }
+        if ($details['comments'])
+            echo '<textarea disabled="disabled">'.htmlentities($details['comments']).'</textarea>';
+        echo "</div><div class='rubric'><form onsubmit='sendGrade(event, \"$student\")' name='$student'>";
+        foreach($q['rubric'] as $i=>$ri) {
+            //if ($ri['hide']) continue; // messes up various other grader checks
+            echo '<div class="row"><div class="cell">';
+            echo "<label class='submitted'><input type='radio' name='i$i' value='1'/>1</label>";
+            echo "<label class='submitting'><input type='radio' name='i$i' value='0.5'/>½</label>";
+            echo "<label class='disconnected'><input type='radio' name='i$i' value='0'/>0</label>";
+            echo "</div><div class='cell'>$ri[text]</div>";
+            echo '</div>';
+        }
+        echo "<textarea name='reply'>".htmlentities($details['feedback'])."</textarea>";
+        echo "<input type='submit' value='Submit Grade'/>";
+        echo "</form></div></div>";
+    }
+    
+    ?>
+    <script id="separator" type="text/javascript">
+    function reveal(id) {
+        let a = document.querySelector('#'+id+' a[onclick]');
+        a.removeAttribute('onclick');
+        let img = document.createElement('img');
+        img.src = 'imgshow.php?asuser='+id+'&qid=<?=$quizid?>&slug=<?=$slug?>';
+        img.classList.add('pageview');
+        while (a.lastChild) a.removeChild(a.lastChild);
+        a.appendChild(img);
+        setTimeout(()=>{
+            a.href = 'imgshow.php?asuser='+id+'&qid=<?=$quizid?>&slug=<?=$slug?>'
+            a.setAttribute('target','_blank');
+        }, 100);
+        return true;
+    }
+
+    async function postData(url, data) {
+        const response = await fetch(url, {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        return response.text();
+    }
+    
+    window._lastOffset = 0;
+    window._timeoutID = 0;
+    function acceptChanges(text) {
+        window.clearTimeout(window._timeoutID);
+        let delta = new TextEncoder().encode(text).length;
+        if (delta > 0) {
+            window._lastOffset += new TextEncoder().encode(text).length;
+            text.trim().split('\n').forEach(entry => {
+                bits = entry.split('\t')
+                let bucket = document.getElementById(bits[0]);
+                bucket.classList.remove('submitting');
+                bucket.classList.add('submitted');
+                document.body.appendChild(bucket);
+                let t = document.forms[bits[0]].elements
+                JSON.parse(bits[1]).forEach((val,idx)=>{
+                    t['i'+idx].value = String(val);
+                })
+                t['reply'].value = JSON.parse(bits[2]);
+                console.log(bits[4],'graded',bits[0],'at',bits[3]);
+            })
+        }
+        viewing()
+        window._timeoutID = window.setTimeout(gradePing, 60*1000);
+    }
+
+    function viewing() {
+        let queue = [
+            document.querySelector('[class="grade1"]'),
+            document.querySelector('[class="grade1"] ~ [class="grade1"]'),
+        ];
+        queue.forEach(e => {
+            if (e && e.querySelector('.submission a[onclick]'))
+                e.querySelector('.submission a[onclick]').click();
+        })
+        
+        postData('grader_sync.php?qid=<?=$quizid?>&slug=<?=$slug?>', queue.map(x=>x?x.id:null)).then(txt => {
+            //console.log('sync',txt);
+            Object.entries(JSON.parse(txt)).forEach(([u,q])=>{
+                if (u != '<?=$user?>') {
+                    if (q[1] && q[1] != queue[0].id && q[1] != queue[1].id) {
+                        document.body.insertBefore(
+                            document.getElementById(q[1]),
+                            document.getElementById('separator')
+                        )
+                    }
+                }
+            });
+            Object.entries(JSON.parse(txt)).forEach(([u,q])=>{
+                if (u != '<?=$user?>') {
+                    if (q[0] && q[0] != queue[0].id) {
+                        document.body.insertBefore(
+                            document.getElementById(q[0]),
+                            document.getElementById('separator')
+                        )
+                    }
+                }
+            });
+            let nq = [
+                document.querySelector('[class="grade1"]'),
+                document.querySelector('[class="grade1"] ~ [class="grade1"]'),
+            ];
+            if (nq.map(x=>x.id).join(' ') != queue.map(x=>x.id).join(' ')) {
+                postData('grader_sync.php?qid=<?=$quizid?>&slug=<?=$slug?>', nq.map(x=>x?x.id:null))
+                // ignore results to avoid infinite contesting at end
+            }
+        });
+    }
+
+    function sendGrade(event, id) {
+        event.preventDefault();
+        let t = document.forms[id].elements
+        let ans = [];
+        for(let i=0; i<(t.length-2)/3; i+=1) {
+            if (t['i'+i].value.length == 0) {
+                t['i'+i][0].parentElement.parentElement.parentElement.classList.add('disconnected');
+                return;
+            }
+            t['i'+i][0].parentElement.parentElement.parentElement.classList.remove('disconnected');
+            ans[i] = Number(t['i'+i].value);
+        }
+        let msg = {
+            kind:'rubric',
+            quiz:<?=json_encode($quizid)?>,
+            slug:<?=json_encode($slug)?>,
+            user:id,
+            reply: t.reply.value,
+            rubric: ans,
+            lastOffset: window._lastOffset,
+            // add lastOffset
+        }
+        
+        let me = document.getElementById(id)
+
+        me.classList.add('submitting');
+        //document.body.appendChild(me);
+        console.log('sending', msg);
+        postData('grader_listener.php', msg)
+            .then(acceptChanges)
+            .catch(err => {
+                me.classList.remove('submitting');
+                me.classList.add('disconnected');
+                console.error(err);
+                alert('Failed to send grade to server! Check the console for more detailed log.');
+            });
+
+    }
+    
+    function gradePing() {
+        postData('grader_listener.php', {
+            kind:'rubric',
+            quiz:<?=json_encode($quizid)?>,
+            slug:<?=json_encode($slug)?>,
+            lastOffset: window._lastOffset,
+        }).then(acceptChanges);
+    }
+    
+    gradePing();
+    </script><?php
+}
+
 
 
 ?><!DOCTYPE html><html>
@@ -273,6 +506,8 @@ if (isset($_GET['qid']) && !isset(($qobj = qparse($_GET['qid']))['error'])) {
             show_blanks($_GET['qid'], $questions[$_GET['slug']], $mqs[$_GET['slug']]);
         } else if ($_GET['kind'] == 'comment') {
             show_comments($_GET['qid'], $questions[$_GET['slug']], $mqs[$_GET['slug']]);
+        } else if ($_GET['kind'] == 'rubric') {
+            show_rubric($_GET['qid'], $questions[$_GET['slug']], $mqs[$_GET['slug']]);
         } else {
             echo "To do: show \"$_GET[kind]\" view for $qobj[slug] question $_GET[slug]\n";
         }
@@ -294,6 +529,18 @@ if (isset($_GET['qid']) && !isset(($qobj = qparse($_GET['qid']))['error'])) {
             }
         }
         */
+
+echo "<script>console.log(".json_encode(array_keys($rev)).")</script>";
+        foreach($rev as $slug=>$val) if (substr($slug,8) == '-pending') {
+            $slug = substr($slug,0,8);
+            $done = count($rev["$slug-graded"]);
+            $left = count($val);
+            $of = $done + $left;
+            echo "<tr><td>rubric</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=rubric'>$slug</a></td><td";
+            if ($left == 0) echo ' class="submitted"';
+            echo ">$done of $of";
+            echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
+        }
         foreach($rev as $slug=>$val) if (substr($slug,8) == '-answers') {
             $slug = substr($slug,0,8);
             echo "<tr><td>blank</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=blank'>$slug</a></td><td";
@@ -330,7 +577,7 @@ if (isset($_GET['qid']) && !isset(($qobj = qparse($_GET['qid']))['error'])) {
     foreach(glob('questions/*.md') as $i=>$name) {
         $name = basename($name,".md");
         $qobj = qparse($name);
-        if ($sobj['due'] >= time()) continue;
+        if ($qobj['due'] >= time()) continue;
         echo "<br/><a href='grader.php?qid=$name'>$name: $qobj[title]</a>";
     }
 }

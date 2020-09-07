@@ -50,7 +50,7 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
             
             echo "<div class='description'>";
             echo "<strong>Question $qnum</strong>";
-            if ($seeabove) echo " (see above)";
+            if (isset($qg['text']) && $qg['text']) echo " (see above)";
             echo "\n$q[text]";
             echo "</div>";
 
@@ -95,6 +95,9 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
     $tmp = array();
     foreach(glob('review/*.md') as $f) {
         $q = qparse($f, TRUE);
+        
+        if (!$isstaff && ($q['draft'] || ($q['hide']))) continue; // unlist
+
         $s = basename($f,'.md');
         $tmp[$q['due'].'-'.$s] = array($s, $q['title']);
     }

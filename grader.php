@@ -128,9 +128,6 @@ function get_rubrics($quizid, $q) {
  * keys are ordered with last-first-graded first
  */
 function get_graded_rubrics($quizid, $q, $grader) {
-
-echo "<script>console.log()</script>"
-
     $slug = $q['slug'];
     $qobj = qparse($quizid);
     $rev = get_review($quizid);

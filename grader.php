@@ -128,7 +128,9 @@ function get_rubrics($quizid, $q) {
  * keys are ordered with last-first-graded first
  */
 function get_graded_rubrics($quizid, $q, $grader) {
-    
+
+echo "<script>console.log()</script>"
+
     $slug = $q['slug'];
     $qobj = qparse($quizid);
     $rev = get_review($quizid);
@@ -329,6 +331,7 @@ function show_rubric($quizid, $q, $mq) {
             text.trim().split('\n').forEach(entry => {
                 bits = entry.split('\t')
                 let bucket = document.getElementById(bits[0]);
+                if (!bucket) return;
                 bucket.classList.remove('submitting');
                 bucket.classList.add('submitted');
                 document.body.appendChild(bucket);

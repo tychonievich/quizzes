@@ -359,7 +359,7 @@ function show_rubric($quizid, $q, $mq) {
             //console.log('sync',txt);
             Object.entries(JSON.parse(txt)).forEach(([u,q])=>{
                 if (u != '<?=$user?>') {
-                    if (q[1] && q[1] != queue[0].id && q[1] != queue[1].id) {
+                    if (q[1] && (!queue[0] || q[1] != queue[0].id) && (!queue[1] || q[1] != queue[1].id)) {
                         document.body.insertBefore(
                             document.getElementById(q[1]),
                             document.getElementById('separator')
@@ -369,7 +369,7 @@ function show_rubric($quizid, $q, $mq) {
             });
             Object.entries(JSON.parse(txt)).forEach(([u,q])=>{
                 if (u != '<?=$user?>') {
-                    if (q[0] && q[0] != queue[0].id) {
+                    if (q[0] && (!queue[0] || q[0] != queue[0].id)) {
                         document.body.insertBefore(
                             document.getElementById(q[0]),
                             document.getElementById('separator')

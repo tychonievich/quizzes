@@ -116,6 +116,45 @@ function get_rubrics($quizid, $q) {
     return $ans;
 }
 
+/**
+ * Given a quiz, one of its questions, and a grader ID, return an array.
+ * keys are students ids.
+ * values are arrays with two keys:
+ *  "submitted":true/false if image, or their answer array
+ *  "comments":their comments, or null
+ *  "graded":[1,1,0.5] or null
+ *  "feedback":grader comments, or null
+ * 
+ * keys are ordered with last-first-graded first
+ */
+function get_graded_rubrics($quizid, $q, $grader) {
+    
+    $slug = $q['slug'];
+    $qobj = qparse($quizid);
+    $rev = get_review($quizid);
+    
+    $ans = array();
+    $fh = fopen("log/$quizid/gradelog_$slug.lines", "r");
+    while (NULL !== ($line = fgets($fh))) {
+        $line = trim($line);
+        if (!$line) continue;
+        $bits = explode("\t",$line);
+        if ($bits[4] == $grader) {
+            $sobj = aparse($qobj, $bits[0]);
+            $ans[$bits[0]] = array(
+                "submitted" => $q['type'] == 'image' 
+                    ? file_exists("log/$quizid/$bits[0]-$slug") 
+                    : null,
+                "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
+                "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
+                "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null
+            );
+        }
+    }
+
+    return $ans;
+}
+
 
 
 function show_blanks($quizid, $q, $mq) {
@@ -207,7 +246,9 @@ function show_rubric($quizid, $q, $mq) {
         foreach($q['options'] as $opt)
             $slug2html[$opt['slug']] = $opt['text'];
 
-    foreach(get_rubrics($quizid, $q) as $student => $details) {
+    $qset = isset($_GET['mine']) ? get_graded_rubrics($quizid, $q, $user) : get_rubrics($quizid, $q);
+
+    foreach($qset as $student => $details) {
         echo "<div class='grade1' id='$student'><div class='submission'>";
         $ans = $details['submitted'];
 //echo "<pre>".__LINE__." ".json_encode($details)."</pre>";
@@ -314,6 +355,7 @@ function show_rubric($quizid, $q, $mq) {
         })
         
         postData('grader_sync.php?qid=<?=$quizid?>&slug=<?=$slug?>', queue.map(x=>x?x.id:null)).then(txt => {
+            if (!txt) return;
             //console.log('sync',txt);
             Object.entries(JSON.parse(txt)).forEach(([u,q])=>{
                 if (u != '<?=$user?>') {

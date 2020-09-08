@@ -196,7 +196,7 @@ function show_comments($quizid, $q, $mq) {
 function show_rubric($quizid, $q, $mq) {
     global $user;
     $slug = $q['slug'];
-    echo "<details><summary>Question description (click to toggle view)</summary>";
+    echo "<details><summary tabindex='-1'>Question description (click to toggle view)</summary>";
     if ($mq['text']) echo "<div class='multiquestion'>$mq[text]";
     showQuestion($q, $quizid, '', 'none', false, $mq['text'], array(''), true, true, false, true);
     if ($mq['text']) echo '</div>';
@@ -234,7 +234,12 @@ function show_rubric($quizid, $q, $mq) {
         }
         echo "<textarea name='reply'>".htmlentities($details['feedback'])."</textarea>";
         echo "<input type='submit' value='Submit Grade'/>";
-        echo "</form></div></div>";
+        echo "</form>";
+        echo "<div>Rotate image: <input type='button' onclick='spin(\"img-$student\",-90)' value='↶' tabindex='-1'></input> <input type='button' onclick='spin(\"img-$student\",90)' value='↷' tabindex='-1'></input></div>";
+        echo "<div>View <a href='quiz.php?qid=$quizid&asuser=$student' target='_blank' tabindex='-1'>full student quiz</a> in new tab</div>";
+        
+        
+        echo"</div></div>";
     }
     
     ?>
@@ -246,7 +251,16 @@ function show_rubric($quizid, $q, $mq) {
         img.src = 'imgshow.php?asuser='+id+'&qid=<?=$quizid?>&slug=<?=$slug?>';
         img.classList.add('pageview');
         while (a.lastChild) a.removeChild(a.lastChild);
-        a.appendChild(img);
+        a.tabindex
+        
+        let div = document.createElement('div');
+        div.id = 'img-'+id;
+        div.style.display = 'inline-block';
+        div.appendChild(img);
+        a.appendChild(div);
+        a.tabIndex = -1;
+        
+        //a.appendChild(img);
         setTimeout(()=>{
             a.href = 'imgshow.php?asuser='+id+'&qid=<?=$quizid?>&slug=<?=$slug?>'
             a.setAttribute('target','_blank');
@@ -380,6 +394,41 @@ function show_rubric($quizid, $q, $mq) {
         }).then(acceptChanges);
     }
     
+
+    /// CSS transforms don't impact bounding boxes, so this depends on
+    /// a wrapper around the item to rotate to fix that.
+    function setRot(deg, bucket, img) {
+        let h = img.clientHeight,
+            w = img.clientWidth,
+            m = Math.min(w,h),
+            M = Math.max(w,h);
+        if (deg%180 == 0) {
+            bucket.style.width = 'auto';
+            bucket.style.height = 'auto';
+        } else {
+            bucket.style.width = h+'px';
+            bucket.style.height = w+'px';
+        }
+        img.style.transform = 'rotate('+deg+'deg)';
+        if (deg == 90 || deg == -270)
+            img.style.transformOrigin = (h/2)+'px '+(h/2)+'px'
+        if (deg == 180 || deg == -180)
+            img.style.transformOrigin = 'center'
+        if (deg == 270 || deg == -90)
+            img.style.transformOrigin = (w/2)+'px '+(w/2)+'px'
+    }
+    /// dir should be ±90 -- +90 for CW, -90 for CCW
+    function spin(id, dir) {
+console.log('spinning',id,'by',dir);
+        let e = document.getElementById(id);
+console.log('spinning',e,'by',dir);
+        let i = e.firstElementChild;
+        let r = e.getAttribute('rot') || 0
+        r = ((0|r)+dir)%360;
+        setRot(r, e, i);
+        e.setAttribute('rot', r);
+    }
+
     gradePing();
     </script><?php
 }

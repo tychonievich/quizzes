@@ -135,7 +135,7 @@ function get_graded_rubrics($quizid, $q, $grader) {
     
     $ans = array();
     $fh = fopen("log/$quizid/gradelog_$slug.lines", "r");
-    while (NULL !== ($line = fgets($fh))) {
+    while (($line = fgets($fh))) {
         $line = trim($line);
         if (!$line) continue;
         $bits = explode("\t",$line);

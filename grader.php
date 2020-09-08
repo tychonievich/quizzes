@@ -386,8 +386,8 @@ function show_rubric($quizid, $q, $mq) {
                 document.querySelector('[class="grade1"]'),
                 document.querySelector('[class="grade1"] ~ [class="grade1"]'),
             ];
-            if (nq.map(x=>x.id).join(' ') != queue.map(x=>x.id).join(' ')) {
-                postData('grader_sync.php?qid=<?=$quizid?>&slug=<?=$slug?>', nq.map(x=>x?x.id:null))
+            if (nq.filter(x=>x).map(x=>x.id).join(' ') != queue.filter(x=>x).map(x=>x.id).join(' ')) {
+                postData('grader_sync.php?qid=<?=$quizid?>&slug=<?=$slug?>', nq.filter(x=>x).map(x=>x?x.id:null))
                 // ignore results to avoid infinite contesting at end
             }
         });

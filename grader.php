@@ -234,6 +234,13 @@ function show_comments($quizid, $q, $mq) {
 function show_rubric($quizid, $q, $mq) {
     global $user;
     $slug = $q['slug'];
+    if (isset($_GET['mine'])) {
+        $qs = preg_replace('/([&]mine\b(=[^&]*)?/', '', $_SERVER['QUERY_STRING']);
+        
+        echo "<p>Viewing submissions graded by $GET[mine]; <a href='?$qs'>return to main grading page</a></p>";
+    } else {
+        echo "<p>Viewing all submissions; <a href='$SERVER[REQUEST_URI]&mine'>view just those you've graded</a></p>";
+    }
     echo "<details><summary tabindex='-1'>Question description (click to toggle view)</summary>";
     if ($mq['text']) echo "<div class='multiquestion'>$mq[text]";
     showQuestion($q, $quizid, '', 'none', false, $mq['text'], array(''), true, true, false, true);

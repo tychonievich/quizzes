@@ -235,9 +235,9 @@ function show_rubric($quizid, $q, $mq) {
     global $user;
     $slug = $q['slug'];
     if (isset($_GET['mine'])) {
-        $qs = preg_replace('/([&]mine\b(=[^&]*)?/', '', $_SERVER['QUERY_STRING']);
+        $qs = preg_replace('/[&]mine\b(=[^&]*)?/', '', $_SERVER['QUERY_STRING']);
         
-        echo "<p>Viewing submissions graded by $GET[mine]; <a href='?$qs'>return to main grading page</a></p>";
+        echo "<p>Viewing submissions graded by $user; <a href='?$qs'>return to main grading page</a></p>";
     } else {
         echo "<p>Viewing all submissions; <a href='?$_SERVER[QUERY_STRING]&mine'>view just those you've graded</a></p>";
     }

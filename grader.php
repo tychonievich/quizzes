@@ -293,10 +293,12 @@ function show_rubric($quizid, $q, $mq) {
     <script id="separator" type="text/javascript">
     function reveal(id) {
         let a = document.querySelector('#'+id+' a[onclick]');
+        if (!a) return;
         a.removeAttribute('onclick');
         let img = document.createElement('img');
         img.src = 'imgshow.php?asuser='+id+'&qid=<?=$quizid?>&slug=<?=$slug?>';
         img.classList.add('pageview');
+        img.setAttribute('loading','lazy');
         while (a.lastChild) a.removeChild(a.lastChild);
         a.tabindex
         
@@ -313,6 +315,10 @@ function show_rubric($quizid, $q, $mq) {
             a.setAttribute('target','_blank');
         }, 100);
         return true;
+    }
+
+    async function revealAll() {
+        document.querySelectorAll('div.grade1[id]').forEach(x => reveal(x.id));
     }
 
     async function postData(url, data) {

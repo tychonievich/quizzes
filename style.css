@@ -43,7 +43,8 @@ td { padding:1ex; }
 .question tbody tr:nth-child(2n+1) { background-color:#eee; }
 
 
-.grade1 { display: grid; margin: 1ex; padding: 1ex; border-radius:1.5ex; background: #fff7; }
+.grade1 { display: grid; margin: 1ex; padding: 1ex; border-radius:1.5ex; }
+.grade1:not(.submitted):not(.submitting):not(.disconnected) { background: #fff7; }
 .grade1 .submission { grid-column: 1; grid-row:1; display: flex; flex-direction: column; }
 .grade1 .submission textarea { flex: 1; }
 .grade1 .rubric { grid-column: 2; grid-row:1; }

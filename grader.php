@@ -239,7 +239,7 @@ function show_rubric($quizid, $q, $mq) {
         
         echo "<p>Viewing submissions graded by $GET[mine]; <a href='?$qs'>return to main grading page</a></p>";
     } else {
-        echo "<p>Viewing all submissions; <a href='?$SERVER[QUERY_STRING]&mine'>view just those you've graded</a></p>";
+        echo "<p>Viewing all submissions; <a href='?$_SERVER[QUERY_STRING]&mine'>view just those you've graded</a></p>";
     }
     echo "<details><summary tabindex='-1'>Question description (click to toggle view)</summary>";
     if ($mq['text']) echo "<div class='multiquestion'>$mq[text]";

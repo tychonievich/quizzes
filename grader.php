@@ -263,7 +263,7 @@ function show_rubric($quizid, $q, $mq) {
         echo "<div class='grade1' id='$student'><div class='submission'>";
         $ans = $details['submitted'];
 //echo "<pre>".__LINE__." ".json_encode($details)."</pre>";
-        if (!$ans) echo '(left blank)';
+        if (!$ans) echo '<em>(student left answer blank)</em>';
         else if ($ans === true)
             echo "<a onclick='reveal(\"$student\")'>view image</a>";
         else {

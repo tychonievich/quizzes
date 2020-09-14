@@ -315,8 +315,9 @@ and the question shows "(not yet graded)"
 
 A few options are only available by staff editing URLs directly
 
-- If you are staff and add `asuser=mst3k` as a query parameter (e.g. `quiz.php?quid=03&asuser=mst3k`), then you'll see the page `mst3k` sees, including their answers, etc.
-- If you are staff and add `showkey` as a query parameter (e.g., `quiz.php?quid=03&showkey`) then you'll be able to see the key even before the quiz closes.
+- If you are staff and add `asuser=mst3k` as a query parameter (e.g. `quiz.php?qid=03&asuser=mst3k`), then you'll see the page `mst3k` sees, including their answers, etc.
+- If you are staff and add `showkey` as a query parameter (e.g., `quiz.php?qid=03&showkey`) then you'll be able to see the key even before the quiz closes.
+- If you are staff and add `section=XYZ` as a query parameter (e.g., `index.php?section=9`), and if you have a file named `sections.json` with studnet IDs as keys and section names as values, like `{"mst3k":9,"lat7h":10,"tj1a":9}`{.json}, then all grade averages and response percentages will be computed based only on students in that section.
 
 ## Known bugs
 

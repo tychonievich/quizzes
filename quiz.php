@@ -228,8 +228,7 @@ function imgup() {
                 "upload-from" => $name
             ))."\n");
                 
-            if (strpos($name, ".HEIC") || strpos($name, '.heic')
-            || strpos($name, ".HEIF") || strpos($name, '.heif')) {
+            if (stripos($name, ".HEIC") || stripos($name, ".HEIF")) {
                 $stdout = array();
                 $retval = 0;
                 exec("heif-convert $tmp $dir/$user-$slug.jpg", $stdout, $retval);
@@ -241,10 +240,10 @@ function imgup() {
                     echo "Received $name and converted to JPEG";
                 }
 
-            } else if (strpos($name, ".PDF") || strpos($name, '.pdf')) {
+            } else if (stripos($name, ".PDF")) {
                 $stdout = array();
                 $retval = 0;
-                exec("gm convert -density 200 $tmp -trim +repage $dir/$user-$slug.jpg", $stdout, $retval);
+                exec("gm convert -density 200 $tmp -trim -append +repage $dir/$user-$slug.jpg", $stdout, $retval);
                 if ($retval) {
                     echo "Failed to convert PDF file into a usable format. Please try again with a JPEG or PNG";
                 } else {
@@ -253,9 +252,8 @@ function imgup() {
                     echo "Received $name and converted to JPEG";
                 }
             } else if (strpos($fdet['type'], 'image/') === 0 
-            || (strpos($name, ".JPG") || strpos($name, '.jpg'))
-            || (strpos($name, ".JPEG") || strpos($name, '.jpeg'))
-            || (strpos($name, ".PNG") || strpos($name, '.png'))) {
+            || stripos($name, ".JPG") || stripos($name, ".JPEG")
+            || stripos($name, ".PNG")) {
                 if (move_uploaded_file($tmp, "$dir/$user-$slug")) {
                     chmod("$dir/$user-$slug", 0666);
                     echo "Received $name";

@@ -604,20 +604,25 @@ function grade($qobj, &$sobj, &$review=FALSE, &$hist=FALSE) {
 
 $_histogram = array();
 function histogram($qobj, &$review=FALSE) {
-    global $metadata;
+    global $metadata, $isstaff;
+    $section = ($isstaff && isset($_GET['section'])) ? $_GET['section'] : FALSE;
     if (is_string($qobj)) $qobj = qparse($qobj);
-    if (isset($_histogram[$qobj['slug']])) return $_histogram[$qobj['slug']];
-    $cache_hist = "cache/$qobj[slug]-hist.json";
-    if (file_exists($cache_hist)) { // only saves 10 ms in my example run
-        $cachetime = filemtime($cache_hist);
-        $use_cache = $cachetime > filemtime("questions/$qobj[slug].md");
-        if ($use_cache) foreach(glob("log/$qobj[slug]/*.log") as $anspath)
-            if (filemtime($anspath) >= $cachetime) {
-                $use_cache = FALSE;
-                break;
-            }
-        if ($use_cache)
-            return $_histogram[$qobj['slug']] = json_decode(file_get_contents($cache_hist), TRUE);
+    if (!$section) {
+        if (isset($_histogram[$qobj['slug']])) return $_histogram[$qobj['slug']];
+        $cache_hist = "cache/$qobj[slug]-hist.json";
+        if (file_exists($cache_hist)) { // only saves 10 ms in my example run
+            $cachetime = filemtime($cache_hist);
+            $use_cache = $cachetime > filemtime("questions/$qobj[slug].md");
+            if ($use_cache) foreach(glob("log/$qobj[slug]/*.log") as $anspath)
+                if (filemtime($anspath) >= $cachetime) {
+                    $use_cache = FALSE;
+                    break;
+                }
+            if ($use_cache)
+                return $_histogram[$qobj['slug']] = json_decode(file_get_contents($cache_hist), TRUE);
+        }
+    } else {
+        $smap = json_decode(file_get_contents('sections.json'), true);
     }
     
     if (!$review) $review = array();
@@ -628,15 +633,19 @@ function histogram($qobj, &$review=FALSE) {
     foreach(glob("log/$qobj[slug]/*.log") as $anspath) {
         $student = basename($anspath, ".log");
         if (in_array($student, $metadata['staff'])) continue;
+        if ($section && (!isset($smap[$student]) || $smap[$student] != $section)) continue;
         $sobj = aparse($qobj['slug'], $student);
         $hist['total'] += 1;
         $hist['right'] += grade($qobj, $sobj, $review, $hist);
     }
-    file_put_contents_recursive($cache_hist, json_encode($hist, JSON_PRETTY));
-    chmod($cache_hist, 0666);
-    file_put_contents_recursive("cache/$qobj[slug]-review.json", json_encode($review, JSON_PRETTY));
-    chmod("cache/$qobj[slug]-review.json", 0666);
-    return $_histogram[$qobj['slug']] = $hist;
+    if (!$section) {
+        file_put_contents_recursive($cache_hist, json_encode($hist, JSON_PRETTY));
+        chmod($cache_hist, 0666);
+        file_put_contents_recursive("cache/$qobj[slug]-review.json", json_encode($review, JSON_PRETTY));
+        chmod("cache/$qobj[slug]-review.json", 0666);
+        $_histogram[$qobj['slug']] = $hist;
+    }
+    return $hist;
 }
 
 function durationString($time) {

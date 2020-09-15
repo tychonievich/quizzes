@@ -801,6 +801,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     } else if ($q['type'] == 'image') {
         if ($ajax && ($realisstaff || !$disable)) {
             echo "<form method='POST' enctype='multipart/form-data' action='$_SERVER[REQUEST_URI]'>Upload an image of your answer: <input type='file' name='$q[slug]' onchange='pending($qnum)'/><input type='submit' value='upload selected file'/></form>";
+            echo "Accepted filetypes: JPEG, PNG, GIF, HEIF, HEIC, PDF. Multi-page responses currently accepted only as PDF.";
         }
         if ($ajax && file_exists("log/$quizid/$user-$q[slug]")) {
             echo "<br/>Last image uploaded: <img class='preview' src='imgshow.php?$_SERVER[QUERY_STRING]&slug=$q[slug]'/>";

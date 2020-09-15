@@ -201,7 +201,7 @@ function makeQuasiAnonID($quizid) {
         $id = basename($path,".log");
         $ans[$id] = 1000+$idx[$i];
     }
-    return ans;
+    return $ans;
 }
 
 

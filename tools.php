@@ -701,7 +701,7 @@ function fractionOf($num) {
 }
 
 function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false){
-    global $metadata;
+    global $metadata, $realisstaff;
     $postcall = "postAns(".htmlspecialchars(json_encode($quizid)).", $qnum)";
     
     echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
@@ -798,7 +798,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         if (isset($replied['answer'][0])) echo " value='".htmlentities($replied['answer'][0])."'";
         echo "/></div>";
         if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
-    } else if ($q['type'] == 'image') {
+    } else if ($q['type'] == 'image' && ($realisstaff || !$disable)) {
         // no time limit in images, so always show form even if not may_submit
         if ($ajax) {
             echo "<form method='POST' enctype='multipart/form-data' action='$_SERVER[REQUEST_URI]'>Upload an image of your answer: <input type='file' name='$q[slug]' onchange='pending($qnum)'/><input type='submit' value='upload selected file'/></form>";

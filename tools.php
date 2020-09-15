@@ -798,8 +798,8 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         if (isset($replied['answer'][0])) echo " value='".htmlentities($replied['answer'][0])."'";
         echo "/></div>";
         if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
-    } else if ($q['type'] == 'image' && ($realisstaff || !$disable)) {
-        if ($ajax) {
+    } else if ($q['type'] == 'image') {
+        if ($ajax && ($realisstaff || !$disable)) {
             echo "<form method='POST' enctype='multipart/form-data' action='$_SERVER[REQUEST_URI]'>Upload an image of your answer: <input type='file' name='$q[slug]' onchange='pending($qnum)'/><input type='submit' value='upload selected file'/></form>";
 
             if (file_exists("log/$quizid/$user-$q[slug]")) {

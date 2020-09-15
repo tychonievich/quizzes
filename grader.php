@@ -102,6 +102,9 @@ function get_rubrics($quizid, $q) {
         $users = array_merge($users, $rev["$slug-graded"]);
     
     $qaid = makeQuasiAnonID($quizid);
+if ($_SERVER['PHP_AUTH_USER'] == 'lat7h') {
+    echo '<script>console.log('.json_encode($qaid).');</script>';
+}
     
     $ans = array();
     foreach($users as $user) {
@@ -137,6 +140,10 @@ function get_graded_rubrics($quizid, $q, $grader) {
     $rev = get_review($quizid);
 
     $qaid = makeQuasiAnonID($quizid);
+
+if ($_SERVER['PHP_AUTH_USER'] == 'lat7h') {
+    echo '<script>console.log('.json_encode($qaid).');</script>';
+}
     
     $ans = array();
     $fh = fopen("log/$quizid/gradelog_$slug.lines", "r");
@@ -153,7 +160,7 @@ function get_graded_rubrics($quizid, $q, $grader) {
                 "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
                 "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
                 "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
-                "id" => isset($qaid[$user]) ? $qaid[$user] : 0,
+                "id" => isset($qaid[$bits[0]]) ? $qaid[$bits[0]] : 0,
             );
         }
     }

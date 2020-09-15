@@ -799,7 +799,6 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "/></div>";
         if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
     } else if ($q['type'] == 'image' && ($realisstaff || !$disable)) {
-        // no time limit in images, so always show form even if not may_submit
         if ($ajax) {
             echo "<form method='POST' enctype='multipart/form-data' action='$_SERVER[REQUEST_URI]'>Upload an image of your answer: <input type='file' name='$q[slug]' onchange='pending($qnum)'/><input type='submit' value='upload selected file'/></form>";
 

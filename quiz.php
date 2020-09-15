@@ -135,7 +135,7 @@ else echo '.';
 ?>" style="text-align:center; display:block;">Return to index</a><?php
 
 function imgup() {
-    global $user;
+    global $user, $realisstaff;
     if (isset($_POST['rot'])) { // image rotation request
         $slug = $_REQUEST['slug'];
         echo '<pre>';
@@ -182,6 +182,20 @@ function imgup() {
     if (count($_FILES) > 0) {
         if (!$_GET['qid'] || strpos($_GET['qid'],"/") !== FALSE) {
             echo "<pre>ERROR: malformed request</pre>";
+            return;
+        }
+
+        $qobj = qparse($_GET['qid']);
+        if (isset($qobj['error'])) { 
+            echo "<pre>ERROR: $qobj[error]</pre>";
+            return;
+        }
+        if (!$realisstaff) {
+            $sobj = aparse($qobj, $user);
+            if (!$sobj['may_view']) {
+                echo "<pre>ERROR: You may not upload to this quiz at this time</pre>";
+                return; 
+            }
         }
 
         umask(0); // discouraged but important for mkdir

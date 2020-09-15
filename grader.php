@@ -81,11 +81,12 @@ function get_comments($quizid, $slug) {
 /**
  * Given a quiz and one of its questions, return an array.
  * keys are users
- * values are arrays with two keys:
+ * values are arrays with five keys:
  *  "submitted":true/false if image, or their answer array
  *  "comments":their comments, or null
  *  "graded":[1,1,0.5] or null
  *  "feedback":grader comments, or null
+ *  "id":quasi-anonymous number
  * 
  * keys are ordered with ungraded first, shuffled,
  * then graded after
@@ -100,6 +101,8 @@ function get_rubrics($quizid, $q) {
     if (isset($rev["$slug-graded"]))
         $users = array_merge($users, $rev["$slug-graded"]);
     
+    $qaid = makeQuasiAnonID($quizid);
+    
     $ans = array();
     foreach($users as $user) {
         $sobj = aparse($qobj, $user);
@@ -109,7 +112,8 @@ function get_rubrics($quizid, $q) {
                 : null,
             "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
             "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
-            "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null
+            "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
+            "id" => isset($qaid[$user]) ? $qaid[$user] : 0,
         );
     }
 
@@ -119,18 +123,20 @@ function get_rubrics($quizid, $q) {
 /**
  * Given a quiz, one of its questions, and a grader ID, return an array.
  * keys are students ids.
- * values are arrays with two keys:
+ * values are arrays with five keys:
  *  "submitted":true/false if image, or their answer array
  *  "comments":their comments, or null
  *  "graded":[1,1,0.5] or null
  *  "feedback":grader comments, or null
- * 
+ *  "id":quasi-anonymous number
  * keys are ordered with last-first-graded first
  */
 function get_graded_rubrics($quizid, $q, $grader) {
     $slug = $q['slug'];
     $qobj = qparse($quizid);
     $rev = get_review($quizid);
+
+    $qaid = makeQuasiAnonID($quizid);
     
     $ans = array();
     $fh = fopen("log/$quizid/gradelog_$slug.lines", "r");
@@ -146,12 +152,49 @@ function get_graded_rubrics($quizid, $q, $grader) {
                     : null,
                 "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
                 "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
-                "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null
+                "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
+                "id" => isset($qaid[$user]) ? $qaid[$user] : 0,
             );
         }
     }
 
     return $ans;
+}
+
+/**
+ * PHP does not have stateful random number generators,
+ * which makes shuffling IDs for each quiz differently tricky.
+ * So we hack it using our own LCG
+ */
+function seedShuffle($array, $seed) {
+    $num = intval(md5($seed), 16);
+    $n = count($array);
+    foreach($array as $i=>$val) {
+        $num *= 1103515245;
+        $num += 12345;
+        $num &= 0x7fffffff;
+        $j = $j + (($num&0x3fffffff)%$n);
+        $n -= 1;
+        if ($i != $j) {
+            $array[$i] = $array[$j];
+            $array[$j] = $val;
+        }
+    }
+}
+/**
+ * Short "Anonymous" IDs of students
+ * Note that this will change if a new user views the quiz...
+ */
+function makeQuasiAnonID($quizid) {
+    $ans = array();
+    $whom = glob("log/$quizid/*.log");
+    $idx = array_keys($whom);
+    seedShuffle($idx, $quizid);
+    foreach($whom as $i=>$path) {
+        $id = basename($path,".log");
+        $ans[$id] = 1000+$idx[$i];
+    }
+    return ans;
 }
 
 
@@ -274,7 +317,7 @@ function show_rubric($quizid, $q, $mq) {
         }
         if ($details['comments'])
             echo '<textarea disabled="disabled">'.htmlentities($details['comments']).'</textarea>';
-        echo "</div><div class='rubric'><form onsubmit='sendGrade(event, \"$student\")' name='$student'>";
+        echo "</div><div class='rubric'><span class='qaid'>Submssion ID: $details[id]</span><form onsubmit='sendGrade(event, \"$student\")' name='$student'>";
         foreach($q['rubric'] as $i=>$ri) {
             //if ($ri['hide']) continue; // messes up various other grader checks
             echo '<div class="row"><div class="cell">';

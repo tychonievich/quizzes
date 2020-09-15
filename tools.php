@@ -801,21 +801,22 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     } else if ($q['type'] == 'image') {
         if ($ajax && ($realisstaff || !$disable)) {
             echo "<form method='POST' enctype='multipart/form-data' action='$_SERVER[REQUEST_URI]'>Upload an image of your answer: <input type='file' name='$q[slug]' onchange='pending($qnum)'/><input type='submit' value='upload selected file'/></form>";
-
-            if (file_exists("log/$quizid/$user-$q[slug]")) {
-                echo "<br/>Last image uploaded: <img class='preview' src='imgshow.php?$_SERVER[QUERY_STRING]&slug=$q[slug]'/>";
-                
-                echo "<form method='POST' action='$_SERVER[REQUEST_URI]'>";
-                ?>
-                If the above preview is not the right way up, please click the button that shows what a "T" would look like if rotated the same way that the preview image is:
-                <input type='submit' name='rot' value='⊤'/>
-                <input type='submit' name='rot' value='⊢'/>
-                <input type='submit' name='rot' value='⊥'/>
-                <input type='submit' name='rot' value='⊣'/>
-                <input type='hidden' name='slug' value='<?=htmlentities($q['slug'])?>'/>
-                </form><?php
-            }
         }
+        if ($ajax && file_exists("log/$quizid/$user-$q[slug]")) {
+            echo "<br/>Last image uploaded: <img class='preview' src='imgshow.php?$_SERVER[QUERY_STRING]&slug=$q[slug]'/>";
+            
+            echo "<form method='POST' action='$_SERVER[REQUEST_URI]'>";
+            ?>
+            If the above preview is not the right way up, please click the button that shows what a "T" would look like if rotated the same way that the preview image is:
+            <input type='submit' name='rot' value='⊤'/>
+            <input type='submit' name='rot' value='⊢'/>
+            <input type='submit' name='rot' value='⊥'/>
+            <input type='submit' name='rot' value='⊣'/>
+            <input type='hidden' name='slug' value='<?=htmlentities($q['slug'])?>'/>
+            </form><?php
+        }
+
+    }
 
     } else {
         echo "<strong>ERROR: quiz data malformed (unknown type $q[type])</strong>";

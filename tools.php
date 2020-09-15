@@ -815,9 +815,6 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
             <input type='hidden' name='slug' value='<?=htmlentities($q['slug'])?>'/>
             </form><?php
         }
-
-    }
-
     } else {
         echo "<strong>ERROR: quiz data malformed (unknown type $q[type])</strong>";
     }

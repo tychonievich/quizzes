@@ -192,7 +192,7 @@ function imgup() {
         }
         if (!$realisstaff) {
             $sobj = aparse($qobj, $user);
-            if (!$sobj['may_view']) {
+            if (!$sobj['may_submit']) {
                 echo "<pre>ERROR: You may not upload to this quiz at this time</pre>";
                 return; 
             }

@@ -289,7 +289,7 @@ function show_rubric($quizid, $q, $mq) {
         echo "</form>";
         echo "<div>Rotate image: <input type='button' onclick='spin(\"img-$student\",-90)' value='↶' tabindex='-1'></input> <input type='button' onclick='spin(\"img-$student\",90)' value='↷' tabindex='-1'></input></div>";
         echo "<div>View <a href='quiz.php?qid=$quizid&asuser=$student' target='_blank' tabindex='-1'>full student quiz</a> in new tab</div>";
-        echo "<input type='button' onclick='skip(\"$student\") value='skip this quiz'/>";
+        echo "<input type='button' onclick='skip(\"$student\")' value='skip this quiz'/>";
         
         echo"</div></div>";
     }

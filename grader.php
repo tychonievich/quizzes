@@ -102,10 +102,7 @@ function get_rubrics($quizid, $q) {
         $users = array_merge($users, $rev["$slug-graded"]);
     
     $qaid = makeQuasiAnonID($quizid);
-if ($_SERVER['PHP_AUTH_USER'] == 'lat7h') {
-    echo '<script>console.log('.json_encode($qaid).');</script>';
-}
-    
+
     $ans = array();
     foreach($users as $user) {
         $sobj = aparse($qobj, $user);
@@ -141,10 +138,6 @@ function get_graded_rubrics($quizid, $q, $grader) {
 
     $qaid = makeQuasiAnonID($quizid);
 
-if ($_SERVER['PHP_AUTH_USER'] == 'lat7h') {
-    echo '<script>console.log('.json_encode($qaid).');</script>';
-}
-    
     $ans = array();
     $fh = fopen("log/$quizid/gradelog_$slug.lines", "r");
     while (($line = fgets($fh))) {

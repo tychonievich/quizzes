@@ -425,6 +425,11 @@ function aparse($qobj, $sid) {
                 $ans[$slug]['grade'] = $obj['grade'];
                 $ans[$slug]['feedback'] = $obj['feedback'];
                 if (isset($obj['rubric'])) $ans[$slug]['rubric'] = $obj['rubric'];
+            } else if (isset($obj['upload-to'])) { // upload action
+                // invalidates previous grades
+                unset($ans[$slug]['grade']);
+                unset($ans[$slug]['feedback']);
+                unset($ans[$slug]['rubric']);
             } else { // student action
                 if (isset($obj['answer'])) { // student answer
                     $show = array('answer'=>$obj['answer']);

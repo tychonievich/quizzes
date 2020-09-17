@@ -786,8 +786,6 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
             echo "</label>";
             if ($hist && isset($opt['explain']))
                 echo "<div class='explanation'>$opt[explain]</div>";
-            else if ($realisstaff)
-                echo "<div class='explanation'><a href='S_SERVER[REQUEST_URI]&showkey'>click here to preview key</a></div>";
             
             echo "</li>";
         }
@@ -831,6 +829,8 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     
     if ($hist && isset($q['explain']))
         echo "<div class='explanation'>$q[explain]</div>";
+    else if ($realisstaff)
+        echo "<div class='explanation'><a href='S_SERVER[REQUEST_URI]&showkey'>click here to preview key</a></div>";
 
     if ($hist && isset($q['rubric'])) {
         echo '<div class="explanation"><p><strong>Rubric:</strong></p>';

@@ -512,6 +512,7 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
             }
             $earn /= $of;
             if ($review !== FALSE) {
+                if (!isset($review["$slug-pending"])) $review["$slug-pending"] = array();
                 if ($finished) $review["$slug-graded"][] = $sobj['slug'];
                 else $review["$slug-pending"][] = $sobj['slug'];
             }

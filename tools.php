@@ -786,6 +786,9 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
             echo "</label>";
             if ($hist && isset($opt['explain']))
                 echo "<div class='explanation'>$opt[explain]</div>";
+            else if ($realisstaff)
+                echo "<div class='explanation'><a href='S_SERVER[REQUEST_URI]&showkey'>click here to preview key</a></div>";
+            
             echo "</li>";
         }
         

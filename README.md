@@ -310,6 +310,13 @@ If there is a rubric, then the question is ungraded until a human grades it.
 Post-autograde pre-human grade, the quiz grade shows as a grade range, as e.g. "3--7 / 8 (37--88%)"
 and the question shows "(not yet graded)"
 
+## Regrade requests
+
+If `regrade: true` is present in the quiz metadata, then the following additional features are enabled:
+
+- [ ] after grades are released, a regrade request option shows up for each question.
+    It shows a log of interactions, labeled "student" and "staff", and a text box to make a new reply.
+- [ ] the grader page shows regrade requests, which are presented similarly to commented wrong answers.
 
 ## Staff special options
 

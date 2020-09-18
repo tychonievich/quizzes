@@ -339,6 +339,9 @@ function showQuiz($qid, $blank = false) {
         }
         if (count($qg['q']) > 1 || $qg['text']) echo '</div>';
     }
+    if ($isstaff && !$hist)
+        echo "<div class='explanation'><a href='$_SERVER[REQUEST_URI]&showkey'>click here to preview key</a></div>";
+
 }
 
 imgup();

@@ -19,6 +19,7 @@ if ($data['kind'] == 'rubric') {
             'slug'=>$data['slug'],
             'rubric'=>$data['rubric'],
             'feedback'=>$data['reply'],
+            'date'=>date('Y-m-d H:i:s'),
         ))."\n");
 
         // store in line with tab because JSON escapes it
@@ -41,13 +42,28 @@ if ($data['kind'] == 'rubric') {
 } else if ($data['kind'] == 'reply') {
     $path = "log/$data[quiz]/adjustments_$data[slug].csv";
     $fh = fopen($path, "a");
-    fputcsv($fh, array($data['user'], $data['score'], $data['reply'], $user, date('Y-m-d H:i:s')));
+    fputcsv($fh, array(
+        $data['user'], 
+        isset($data['score']) ? $data['score'] : '', 
+        $data['reply'], 
+        $user, 
+        date('Y-m-d H:i:s')
+    ));
     fclose($fh);
-    putlog("$data[quiz]/$data[user].log", json_encode(array(
-        'slug'=>$data['slug'],
-        'grade'=>$data['score'],
-        'feedback'=>$data['reply'],
-    ))."\n");
+    if (isset($data['score'])) {
+        putlog("$data[quiz]/$data[user].log", json_encode(array(
+            'slug'=>$data['slug'],
+            'grade'=>$data['score'],
+            'feedback'=>$data['reply'],
+            'date'=>date('Y-m-d H:i:s'),
+        ))."\n");
+    } else {
+        putlog("$data[quiz]/$data[user].log", json_encode(array(
+            'slug'=>$data['slug'],
+            'feedback'=>$data['reply'],
+            'date'=>date('Y-m-d H:i:s'),
+        ))."\n");
+    }
 } else if ($data['kind'] == 'key') {
     $fname = "log/$data[quiz]/key_$data[slug].json";
     // race condition if multiple concurrent graders; maybe add file locking?

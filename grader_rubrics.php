@@ -38,6 +38,8 @@ echo "<script>console.log('pending',".json_encode($users).");</script>";
             "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
             "id" => isset($qaid[$user]) ? $qaid[$user] : 0,
         );
+        if (isset($sobj[$slug]['chat']))
+            $ans[$user]['chat'] = $sobj[$slug]['chat'];
     }
 
     return $ans;
@@ -68,16 +70,22 @@ function get_graded_rubrics($quizid, $q, $grader) {
         if (!$line) continue;
         $bits = explode("\t",$line);
         if ($bits[4] == $grader) {
-            $sobj = aparse($qobj, $bits[0]);
-            $ans[$bits[0]] = array(
-                "submitted" => $q['type'] == 'image' 
-                    ? file_exists("log/$quizid/$bits[0]-$slug") 
-                    : null,
-                "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
-                "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
-                "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
-                "id" => isset($qaid[$bits[0]]) ? $qaid[$bits[0]] : 0,
-            );
+            if ($bits[1] == 'null') {
+                unset($ans[$bits[0]]);
+            } else {
+                $sobj = aparse($qobj, $bits[0]);
+                $ans[$bits[0]] = array(
+                    "submitted" => $q['type'] == 'image' 
+                        ? file_exists("log/$quizid/$bits[0]-$slug") 
+                        : null,
+                    "comments" => isset($sobj[$slug]['comments']) ? $sobj[$slug]['comments'] : null,
+                    "graded" => isset($sobj[$slug]['rubric']) ? $sobj[$slug]['rubric'] : null,
+                    "feedback" => isset($sobj[$slug]['feedback']) ? $sobj[$slug]['feedback'] : null,
+                    "id" => isset($qaid[$bits[0]]) ? $qaid[$bits[0]] : 0,
+                );
+                if (isset($sobj[$slug]['chat']))
+                    $ans[$bits[0]]['chat'] = $sobj[$slug]['chat'];
+            }
         }
     }
 
@@ -96,7 +104,8 @@ function seedShuffle($array, $seed) {
         $num *= 1103515245;
         $num += 12345;
         $num &= 0x7fffffff;
-        $j = $j + (($num&0x3fffffff)%$n);
+        if ($n <= 0) continue;
+        $j = $i + (($num&0x3fffffff)%$n);
         $n -= 1;
         if ($i != $j) {
             $array[$i] = $array[$j];
@@ -164,6 +173,16 @@ function show_rubric($quizid, $q, $mq) {
         }
         if ($details['comments'])
             echo '<textarea disabled="disabled">'.htmlentities($details['comments']).'</textarea>';
+        if (isset($details['chat'])) {
+            echo "<blockquote class='chat'>Regrade conversation:<dl>\n";
+            foreach($details['chat'] as $entry) {
+                echo "<dt>$entry[from] <small>($entry[date])</small></dt><dd>";
+                echo htmlspecialchars($entry['text']);
+                echo "</dd>\n";
+            }
+            echo "</dl></blockquote>";
+        }
+
         echo "</div><div class='rubric'><span class='qaid'>Submssion ID: $details[id]</span><form onsubmit='sendGrade(event, \"$student\")' name='$student'>";
         foreach($q['rubric'] as $i=>$ri) {
             //if ($ri['hide']) continue; // messes up various other grader checks
@@ -235,17 +254,25 @@ function show_rubric($quizid, $q, $mq) {
             window._lastOffset += new TextEncoder().encode(text).length;
             text.trim().split('\n').forEach(entry => {
                 bits = entry.split('\t')
+//console.log(<?=__LINE__?>, bits);
                 let bucket = document.getElementById(bits[0]);
                 if (!bucket) return;
-                bucket.classList.remove('submitting');
-                bucket.classList.add('submitted');
-                document.body.appendChild(bucket);
-                let t = document.forms[bits[0]].elements
-                JSON.parse(bits[1]).forEach((val,idx)=>{
-                    t['i'+idx].value = String(val);
-                })
-                t['reply'].value = JSON.parse(bits[2]);
-                console.log(bits[4],'graded',bits[0],'at',bits[3]);
+                if (bits[1] == 'null') {
+                    bucket.classList.remove('submitting');
+                    bucket.classList.remove('submitted');
+                    skip(bits[0]);
+                    console.log('ungraded',bits[0],'due to unhandled regrade request');
+                } else {
+                    bucket.classList.remove('submitting');
+                    bucket.classList.add('submitted');
+                    document.body.appendChild(bucket);
+                    let t = document.forms[bits[0]].elements
+                    JSON.parse(bits[1]).forEach((val,idx)=>{
+                        t['i'+idx].value = String(val);
+                    })
+                    t['reply'].value = JSON.parse(bits[2]);
+                    console.log(bits[4],'graded',bits[0],'at',bits[3]);
+                }
             })
         }
         viewing()

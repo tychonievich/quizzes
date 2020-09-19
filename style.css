@@ -58,3 +58,8 @@ img.pageview { /* This useage prevents zooming in on image; FIX ME */
     max-width: 65vw;
     max-height: 90vh;
 }
+
+.chat dt { font-weight: bold; }
+.chat dt small { font-weight: normal; }
+.chat dd { white-space: pre-wrap; font-family: sans-serif; }
+.chat dd + dt { margin-top: 1em; }

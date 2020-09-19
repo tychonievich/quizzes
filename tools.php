@@ -126,7 +126,8 @@ function qparse($qid,$abspath=FALSE) {
     do {
         $updated = filemtime($filename);
         
-        $ans = array( // defaults
+        $ans = isset($metadata['defaults']) ? $metadata['defaults'] : array();
+        $ans += array( // defaults
             "title"=>"$metadata[quizname] $qid",
             "seconds"=>0,
             "open"=>strtotime("2999-12-31 12:00"),
@@ -137,6 +138,7 @@ function qparse($qid,$abspath=FALSE) {
             "order"=>"shuffle",
             "hide"=>false,
             "draft"=>false,
+            "regrades"=>true,
         );
         
         $fh = fopen($filename, 'rb');
@@ -415,21 +417,58 @@ function aparse($qobj, $sid) {
         if ($fh) while(($jsdata = fgets($fh)) !== FALSE) {
             $obj = json_decode($jsdata, TRUE);
             if ($obj === null) continue;
-            if (isset($obj['rubric'])) { // grader information
+            if (isset($obj['feedback'])) { // grader action
                 $slug = $obj['slug'];
-                $ans[$slug]['feedback'] = $obj['feedback'];
-                $ans[$slug]['rubric'] = $obj['rubric'];
-            } else if (isset($obj['grade'])) { // grader override
-                $slug = $obj['slug'];
-                //if (!isset($ans[$slug])) continue;
-                $ans[$slug]['grade'] = $obj['grade'];
-                $ans[$slug]['feedback'] = $obj['feedback'];
+                if (isset($obj['grade'])) $ans[$slug]['grade'] = $obj['grade'];
                 if (isset($obj['rubric'])) $ans[$slug]['rubric'] = $obj['rubric'];
+                if (isset($ans[$obj['slug']]['chat'])) {
+                    $entry = array(
+                        'from'=>'staff',
+                        'text'=>$obj['feedback'],
+                        'date'=>$obj['date'],
+                    );
+                    if (isset($ans[$obj['slug']]['regrade'])) { // new
+                        $ans[$obj['slug']]['chat'][] = $entry;
+                        unset($ans[$obj['slug']]['regrade']);
+                    } else { // update to existing
+                        $ans[$obj['slug']]['chat'][count($ans[$obj['slug']]['chat'])-1] = $entry;
+                    }
+                } else {
+                    $ans[$slug]['feedback'] = $obj['feedback'];
+                }
             } else if (isset($obj['upload-to'])) { // upload action
                 // invalidates previous grades
-                unset($ans[$slug]['grade']);
-                unset($ans[$slug]['feedback']);
-                unset($ans[$slug]['rubric']);
+                $slug = $obj['upload-to'];
+                if (isset($ans[$slug])) {
+                    if (isset($ans[$slug]['grade'])) unset($ans[$slug]['grade']);
+                    if (isset($ans[$slug]['feedback'])) unset($ans[$slug]['feedback']);
+                    if (isset($ans[$slug]['rubric'])) unset($ans[$slug]['rubric']);
+                    if (isset($ans[$slug]['regrade'])) unset($ans[$slug]['regrade']);
+                    if (isset($ans[$slug]['chat'])) unset($ans[$slug]['chat']);
+                }
+            } else if (isset($obj['request'])) { // regrade request
+                if (!isset($ans[$obj['slug']]['chat'])) {
+                    $ans[$obj['slug']]['chat'] = array();
+                    if (isset($ans[$obj['slug']]['feedback']) && $ans[$obj['slug']]['feedback']) {
+                        $ans[$obj['slug']]['chat'][] = array(
+                            'from'=>'staff',
+                            'text'=>$ans[$obj['slug']]['feedback'],
+                            'date'=>'original grader feedback',
+                        );
+                        $ans[$obj['slug']]['feedback'] = '';
+                    }
+                }
+                $entry = array(
+                    'from'=>'student',
+                    'text'=>$obj['request'],
+                    'date'=>$obj['date'],
+                );
+                if (isset($ans[$obj['slug']]['regrade'])) { // update to existing
+                    $ans[$obj['slug']]['chat'][count($ans[$obj['slug']]['chat'])-1] = $entry;
+                } else { // new
+                    $ans[$obj['slug']]['chat'][] = $entry;
+                    $ans[$obj['slug']]['regrade'] = true;
+                }
             } else { // student action
                 if (isset($obj['answer'])) { // student answer
                     $show = array('answer'=>$obj['answer']);
@@ -581,6 +620,9 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
                 $review[$slug][] = $sobj['slug'];
         }
     }
+    if ($review !== FALSE && isset($sobj[$slug]['regrade']))
+        $review[$slug][] = $sobj['slug'];
+        
     $sobj[$slug]['score'] = round($earn*$q['points'], 6);
     if ($hist !== FALSE) {
         $hist[$slug]['right'] += $sobj[$slug]['score'];
@@ -706,7 +748,7 @@ function fractionOf($num) {
     return ' ';
 }
 
-function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false){
+function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false, $regrades=false){
     global $metadata, $realisstaff;
     $postcall = "postAns(".htmlspecialchars(json_encode($quizid)).", $qnum)";
     
@@ -855,11 +897,28 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     }
     
     if ($hist && isset($replied['feedback'])
-    && ($replied['feedback'] || is_numeric($replied['grade']))) {
+    && ($replied['feedback'] || (isset($replied['grade']) && is_numeric($replied['grade'])))) {
         echo "<blockquote>";
         echo toHTML("**Feedback**: $replied[feedback]" . (is_numeric($replied['grade']) ? " (grade set to ".round($replied['grade']*100,0)."%)" : '')); // cache this in grader_listener??
         echo "</blockquote>";
     }
+    
+    if ($hist && isset($replied['chat'])) {
+        echo "<blockquote class='chat'>Regrade conversation:<dl>\n";
+        foreach($replied['chat'] as $entry) {
+            echo "<dt>$entry[from] <small>($entry[date])</small></dt><dd>";
+            echo htmlspecialchars($entry['text']);
+            echo "</dd>\n";
+        }
+        echo "</dl></blockquote>";
+    }
+
+    echo "<script>console.log(".json_encode(array($regrades, $ajax, $hist),true).")</script>";
+    if ($regrades && $ajax && $hist) {
+        echo "<details><summary>Regrade request</summary><form method='POST'><div class='tinput'><textarea name='request'></textarea><input type='submit' value='submit request'/></div><input type='hidden' name='regrade' value='$q[slug]'/></form></details>";
+    }
+
+
 
     echo "</div>";
 }

@@ -77,6 +77,7 @@ function get_comments($quizid, $slug) {
             );
         }
     }
+    foreach($whom as $k=>$v) if (isset($v['regrade'])) $ans[$k] = null;
     return $ans;
 }
 
@@ -157,7 +158,8 @@ function show_comments($quizid, $q, $mq) {
 
 
 
-?><!DOCTYPE html><html>
+?><!DOCTYPE html>
+<html>
     <head>
     <title>Grade <?=$metadata['quizname']?> <?=isset($_GET['qid']) ? $_GET['qid'] : ''?></title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -336,11 +338,6 @@ echo "<script>console.log(".json_encode(array_keys($rev)).")</script>";
             if ($left == 0) echo ' class="submitted"';
             echo ">".($of-$left)." of $of";
             echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
-            //$done = isset($rev["$slug-done"]) ? count($rev["$slug-done"]) : 0;
-            //if ($of <= $done) echo ' class="submitted"';
-            //echo '>';
-            //echo "${done} of $of";
-            //echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
         }
         ?></tbody></table><?php
     }

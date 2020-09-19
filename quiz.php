@@ -282,6 +282,34 @@ function imgup() {
     }
 }
 
+function newRegrade($qid) {
+    global $user, $realistaff;
+
+    if (!isset($_POST['regrade']) || !isset($_POST['request']) || !$_POST['request']) return; // no request sent
+
+    $qobj = qparse($qid);
+    if (isset($qobj['error'])) { echo "<pre>Regrade error: $qobj[error]</pre>"; return; }
+    if (!$qobj['regrades']) { echo "<pre>Regrade error: this page is not accepting regrade requests</pre>"; return; }
+    
+    $q = null;
+    foreach($qobj['q'] as $mq) foreach($mq['q'] as $_q)
+        if ($_q['slug'] == $_POST['regrade']) $q = $_q;
+    if ($q === null) { echo "<pre>Regrade error: question does not exist</pre>"; return; }
+    
+    // always post to log
+    putlog("$qid/$user.log", json_encode(array(
+        'slug'=>$_POST['regrade'],
+        'request'=>$_POST['request'],
+        'date'=>date('Y-m-d H:i:s'),
+    ))."\n");
+
+    // if a rubric, also post a rubric clear action
+    if (file_exists("log/$qid/gradelog_$_POST[regrade].lines"))
+        putlog("$qid/gradelog_$_POST[regrade].lines", "$user\tnull\t\"\"\t".date('Y-m-d H:i:s')."\t$_SERVER[PHP_AUTH_USER]\n");
+    
+    echo "<pre>Regrade request recorded. It may take a week or two for a response.</pre>"; return; 
+}
+
 function showQuiz($qid, $blank = false) {
     global $user, $metadata, $isstaff;
     $qobj = qparse($qid);
@@ -335,6 +363,7 @@ function showQuiz($qid, $blank = false) {
                 ,$hist
                 ,!$blank
                 ,$isstaff || $hist !== false
+                ,$qobj['regrades']
                 );
         }
         if (count($qg['q']) > 1 || $qg['text']) echo '</div>';
@@ -345,6 +374,7 @@ function showQuiz($qid, $blank = false) {
 }
 
 imgup();
+newRegrade($_GET['qid']);
 showQuiz($_GET['qid'], isset($_GET['view_only']));
 
 ?>

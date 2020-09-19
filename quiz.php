@@ -311,7 +311,7 @@ function newRegrade($qid) {
 }
 
 function showQuiz($qid, $blank = false) {
-    global $user, $metadata, $isstaff;
+    global $user, $metadata, $isstaff, $realisstaff;
     $qobj = qparse($qid);
     if (isset($qobj['error'])) { echo $qobj['error']; return; }
 
@@ -370,6 +370,15 @@ function showQuiz($qid, $blank = false) {
     }
     if ($isstaff && !$hist)
         echo "<div class='explanation'><a href='$_SERVER[REQUEST_URI]&showkey'>click here to preview key</a></div>";
+    
+    if ($realisstaff) {
+        echo "<form action='$_SERVER[REQUEST_URI]' method='GET'><input type='text' list='students-list' name='asuser'/><datalist id='students-list'>";
+        foreach(glob("log/$qobj[slug]/*.log") as $path) {
+            $user = basename($path, ".log");
+            echo "<option value='$user'>$user</option>";
+        }
+        echo "</datalist><input type='hidden' name='qid' value='$qobj[slug]'/><input type='submit' value='view as student'/></form>";
+    }
 
 }
 

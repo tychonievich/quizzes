@@ -74,7 +74,7 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
                     if ($opt['hide']) continue;
                     if (!$opt['points'] && $q['type'] == 'checkbox') continue;
                     $n += 1;
-                    if ($opt['points'] > 0) echo " ".chr($n+0x40);
+                    if ($opt['points'] >= 1) echo " ".chr($n+0x40);
                 }
                 "</details>";
             } else if ($q['type'] == 'box' || $q['type'] == 'img') {

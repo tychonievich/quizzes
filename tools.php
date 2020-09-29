@@ -526,6 +526,7 @@ function aparse($qobj, $sid) {
  */
 function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
     $slug = $q['slug'];
+
     if ($q['points'] <= 0) return FALSE;
 
     // being manually graded should not bypass histogram computation
@@ -534,8 +535,12 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
         $graded = true;
         $earn = $sobj[$slug]['grade'];
     }
+if ($_SERVER["PHP_AUTH_USER"] == 'lat7h') {
+//    echo "<script>console.log(".json_encode([__FILE__, __LINE__, $q]).")</script>";
+}
     
     if (isset($q['rubric'])) {
+
         if (!isset($sobj[$slug]['rubric'])) {
             if ($review !== FALSE)
                 $review["$slug-pending"][] = $sobj['slug'];
@@ -914,7 +919,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     }
 
     echo "<script>console.log(".json_encode(array($regrades, $ajax, $hist),true).")</script>";
-    if ($regrades && $ajax && $hist) {
+    if ($regrades && $hist) {
         echo "<details><summary>Regrade request</summary><form method='POST'><div class='tinput'><textarea name='request'></textarea><input type='submit' value='submit request'/></div><input type='hidden' name='regrade' value='$q[slug]'/></form></details>";
     }
 

@@ -28,6 +28,9 @@ function showAll() {
     $took = array();
     $qids = array();
 
+    $section = (isset($_GET['section'])) ? $_GET['section'] : FALSE;
+    if ($section) $smap = json_decode(file_get_contents('sections.json'), true);
+
     echo "compid";
     foreach(glob("questions/*.md") as $i=>$fname) {
         $qid = pathinfo($fname, PATHINFO_FILENAME);
@@ -43,6 +46,7 @@ function showAll() {
         
         foreach(glob("log/$qid/*.log") as $j=>$logname) {
             $student = pathinfo($logname, PATHINFO_FILENAME);
+            if ($section && $smap[$student] != $section) continue;
             if (!preg_match('/^[a-z]*[0-9][a-z]*$/', $student)) continue; // needed?
             if (!array_key_exists($student, $took)) $took[$student] = array();
 

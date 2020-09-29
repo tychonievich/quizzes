@@ -1,4 +1,4 @@
-﻿<?php
+<!DOCTYPE html>﻿<?php
 
 require_once "tools.php";
 require_once "grader_rubrics.php";
@@ -158,7 +158,7 @@ function show_comments($quizid, $q, $mq) {
 
 
 
-?><!DOCTYPE html>
+?>
 <html>
     <head>
     <title>Grade <?=$metadata['quizname']?> <?=isset($_GET['qid']) ? $_GET['qid'] : ''?></title>

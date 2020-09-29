@@ -159,6 +159,7 @@ function show_rubric($quizid, $q, $mq) {
     $qset = isset($_GET['mine']) ? get_graded_rubrics($quizid, $q, $user) : get_rubrics($quizid, $q);
 
     foreach($qset as $student => $details) {
+        if (!$details['submitted'] || !$detail['comments']) continue;
         echo "<div class='grade1' id='$student'><div class='submission'>";
         $ans = $details['submitted'];
 //echo "<pre>".__LINE__." ".json_encode($details)."</pre>";
@@ -268,7 +269,7 @@ function show_rubric($quizid, $q, $mq) {
                     document.body.appendChild(bucket);
                     let t = document.forms[bits[0]].elements
                     JSON.parse(bits[1]).forEach((val,idx)=>{
-                        t['i'+idx].value = String(val);
+                        if('i'+idx in t) t['i'+idx].value = String(val);
                     })
                     t['reply'].value = JSON.parse(bits[2]);
                     console.log(bits[4],'graded',bits[0],'at',bits[3]);

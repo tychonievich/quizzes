@@ -28,7 +28,9 @@ function oneScore($task, &$status=FALSE) {
     return 0;
 }
 
+$warning = '';
 function annotate(&$outline) {
+    global $warning;
     if (is_string($outline)) {
         $stat = FALSE;
         $ans = array(
@@ -53,12 +55,13 @@ function annotate(&$outline) {
                 $closed = FALSE;
             } else {
                 $opened = TRUE;
+                if ($obj['status'] == 'open') $closed = FALSE;
                 $got += $weight*$obj['earned'];
                 $of += $weight;
             }
         }
         $outline['earned'] = $of ? $got/$of : 0;
-        $outline['status'] = $closed ? 'taken' : ($open ? 'open' : 'future');
+        $outline['status'] = $closed ? 'taken' : ($opened ? 'open' : 'future');
     } break;
 
     case 'replace': {
@@ -68,6 +71,9 @@ function annotate(&$outline) {
             annotate($obj);
             if ($obj['status'] == 'taken' && $obj['earned']) {
                 $outline['status'] = 'taken';
+                if ($obj['earned'] < $outline['earned']) {
+                    $warning .= "<q>$obj[name]</q> decreased grade\n";
+                }
                 $outline['earned'] = $obj['earned'];
             }
         }
@@ -98,13 +104,22 @@ function annotate(&$outline) {
 
 function display($outline, $depth=0) {
     if ($depth == 0) {
-        ?><table style="border-collapse:collapse"><thead><tr><th>Task</th><th>Weight</th><th>Status</th><th>Score</th></tr></thead><tbody><?php
+        ?><table style="border-collapse:collapse"><thead><tr><th>Task</th><th>Weight</th><th>Score</th></tr></thead><tbody><?php
     }
-    echo "<tr style='background: rgba(0,0,0,".(0.25/(1+$depth)).")'>";
+    echo "<tr style='background: rgba(";
+    if ($outline['status'] == 'open') echo "0,127,0,";
+    else if ($outline['status'] == 'future') echo "0,0,0,";
+    else echo "0,0,255,";
+    echo (0.25/(1+$depth));
+    echo ")' class='$outline[status]'>";
     echo "<td style='font-size:".(500/(3+$depth))."%; padding-left:${depth}em'>$outline[name]</td>";
     echo "<td style='text-align:center'>".(isset($outline['weight']) ? $outline['weight']: '')."</td>";
-    echo "<td style='text-align:center'>".($outline['status'] == 'future' && $outline['earned'] ? 'in progress' : ($outline['status'] == 'future' ? '' : $outline['status']))."</td>";
-    echo "<td style='text-align:right'>".($outline['earned'] || $outline['status'] != 'future' ? (100*$outline['earned']).'%' : '')."</td>";
+    echo "<td style='text-align:right'>";
+    if ($outline['earned'] || $outline['status'] != 'future') {
+        if ($outline['status'] == 'open') echo '<small>(so far)</small> ';
+        echo number_format(100*$outline['earned'],5).'%';
+    }
+    echo "</td>";
 
     echo "</tr>";
 
@@ -126,18 +141,19 @@ function ownScore() {
 }
 
 function allScores() {
-    global $user, $outline;
+    global $user, $outline, $warning;
     $section = (isset($_GET['section'])) ? $_GET['section'] : FALSE;
     $smap = json_decode(file_get_contents('sections.json'), true);
     $olduser = $user;
-    echo "<table><thead><tr><th>User</th><th>Grade</th></thead><tbody>";
+    echo "<table><thead><tr><th>User</th><th>Section</th><th>Grade</th><th>Notes</th></thead><tbody>";
     foreach($smap as $cid => $sec) {
         if ($section && $sec != $section) continue;
         $user = $cid;
+        $warning = '';
         $score = $outline;
         annotate($score);
         $user = $olduser;
-        echo "<tr><td><a href='?asuser=$cid' target='_blank'>$cid</a></td><td>".(100*$score['earned'])."</td></tr>";
+        echo "<tr><td><a href='?asuser=$cid' target='_blank'>$cid</a></td><td><a href='?section=$sec'>$sec</a></td><td>".(100*$score['earned'])."</td><td>$warning</td></tr>";
     }
     echo "</tbody></table>";
     echo "<script type='text/javascript' src='columnsort.js'></script>";

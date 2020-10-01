@@ -159,7 +159,7 @@ function show_rubric($quizid, $q, $mq) {
     $qset = isset($_GET['mine']) ? get_graded_rubrics($quizid, $q, $user) : get_rubrics($quizid, $q);
 
     foreach($qset as $student => $details) {
-        if (!$details['submitted'] || !$detail['comments']) continue;
+        if (!$details['submitted'] && !$details['comments']) continue;
         echo "<div class='grade1' id='$student'><div class='submission'>";
         $ans = $details['submitted'];
 //echo "<pre>".__LINE__." ".json_encode($details)."</pre>";

@@ -78,7 +78,7 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
         foreach(glob("log/$_GET[qid]/*.log") as $path) {
             $user=basename($path, '.log');
             $a = aparse($qobj, $user);
-            if (!isset($a[$slug])) continue;
+            if (!isset($a[$slug]) && !file_exists("log/$_GET[qid]/$user-$slug")) continue;
 
             echo "<tr><td>$user";
             if (isset($users[$user])) {
@@ -86,12 +86,13 @@ if (!isset($_GET['qid']) || isset(($qobj = qparse($_GET['qid']))['error'])) {
                 echo $users[$user];
             }
             echo "</td><td>";
-            foreach($a[$slug]['answer'] as $ans) {
-                echo '<div class="answer">';
-                if (isset($slug2html[$ans])) echo $slug2html[$ans];
-                else echo htmlentities($ans);
-                echo '</div>';
-            }
+            if (isset($a[$slug])) 
+                foreach($a[$slug]['answer'] as $ans) {
+                    echo '<div class="answer">';
+                    if (isset($slug2html[$ans])) echo $slug2html[$ans];
+                    else echo htmlentities($ans);
+                    echo '</div>';
+                }
             if (file_exists("log/$_GET[qid]/$user-$slug")) {
                 echo "<div style='display:inline-block; font-size:2em;'><a onclick='spin(\"img-$user\",-90)'>↶</a><br/><a onclick='spin(\"img-$user\",90)'>↷</a></div>";
                 echo "<div id='img-$user' style='display:inline-block'>";

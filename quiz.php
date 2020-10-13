@@ -135,7 +135,7 @@ else echo '.';
 ?>" style="text-align:center; display:block;">Return to index</a><?php
 
 function imgup() {
-    global $user, $realisstaff;
+    global $user, $realisstaff, $metadata;
     if (isset($_POST['rot'])) { // image rotation request
         $slug = $_REQUEST['slug'];
         echo '<pre>';
@@ -193,8 +193,13 @@ function imgup() {
         if (!$realisstaff) {
             $sobj = aparse($qobj, $user);
             if (!$sobj['may_submit']) {
-                echo "<pre>ERROR: You may not upload to this quiz at this time</pre>";
-                return; 
+                if (FALSE && isset($metadata['upload-leeway']) && $sobj['time_left'] > -60*$metadata['upload-leeway']) {
+                    $mins = ceil(-$sobj['time_left']/60);
+                    echo "<pre>INFO: your upload arrived $mins minutes late</pre>";
+                } else {
+                    echo "<pre>ERROR: You may not upload to this quiz at this time</pre>";
+                    return;
+                }
             }
         }
 

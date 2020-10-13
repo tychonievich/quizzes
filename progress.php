@@ -2,9 +2,6 @@
 <html><head><title>Progress in course</title></head>
 <body>
 <?php
-if ($_SERVER['PHP_AUTH_USER'] != 'lat7h') {
-    die("This page is not yet fonished.");
-}
 require_once "tools.php";
 
 $outline = json_decode(file_get_contents('weights.json'), true);

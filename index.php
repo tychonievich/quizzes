@@ -11,6 +11,11 @@ require_once "tools.php";
     <center><a href="<?=$metadata['homepage']?>">Return to course page</a></center>
     <p>
         Welcome, <?=$user?>, to the <?=strtolower($metadata['quizname'])?> index page.
+        <?php
+        if (file_exists('weights.json')) {
+            ?>You may also view the <a href="progress.php">progress tracker</a> if you wish.<?php
+        }
+        ?>
     </p>
     <p>
         This page is static, meaning its information is based on the time you loaded it.

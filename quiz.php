@@ -331,7 +331,7 @@ function showQuiz($qid, $blank = false) {
     }
     
     
-    if ($sobj['may_submit'] && !$sobj['started'])
+    if ($sobj['may_submit'] && !$sobj['started'] && ($user == $_SERVER['PHP_AUTH_USER']))
         putLog("$qid/$user.log", '{"date":"'.date('Y-m-d H:i:s').'"}'."\n");
     if ($sobj['may_submit'])
         echo "<div id='clock'>$sobj[time_left]</div>";
@@ -379,14 +379,54 @@ function showQuiz($qid, $blank = false) {
     if ($realisstaff) {
         echo "<form action='$_SERVER[REQUEST_URI]' method='GET'><input type='text' list='students-list' name='asuser'/><datalist id='students-list'>";
         foreach(glob("log/$qobj[slug]/*.log") as $path) {
-            $user = basename($path, ".log");
-            echo "<option value='$user'>$user</option>";
+            $u = basename($path, ".log");
+            echo "<option value='$u'>$u</option>";
         }
         echo "</datalist><input type='hidden' name='qid' value='$qobj[slug]'/><input type='submit' value='view as student'/></form>";
+        
+        if (file_exists("log/$qid/.$user.log")) {
+            echo "<div>An archived submission for $user has been removed from grading; <a href='?qid=$qid&asuser=$user&restore=$user'>restore that submission</a></div>";
+        } else if (file_exists("log/$qid/$user.log")) {
+            echo "<div>$user did submit this quiz; <a href='?qid=$qid&asuser=$user&archive=$user'>archive it and remove its grade</a></div>";
+        } else {
+            echo "<div>$user did not submit this quiz.</div>";
+        }
     }
 
 }
 
+function handleArchive() {
+    global $realisstaff;
+    if (!$realisstaff) return;
+    if (!isset($_GET['qid'])) {
+        echo "<pre>No quiz selected</pre>";
+        return;
+    }
+    $qid = $_GET['qid'];
+    if (isset($_GET['archive'])) {
+        $user = $_GET['archive'];
+        if (file_exists("log/$qid/$user.log") && !file_exists("log/$qid/.$user.log")) {
+            rename("log/$qid/$user.log", "log/$qid/.$user.log");
+            foreach(glob("log/$qid/$user-*") as $img)
+                rename($img, "log/$qid/.".basename($img));
+            echo "<pre>Archived $user's $qid</pre>";
+        } else {
+            echo "<pre>Failed to archive $user's $qid</pre>";
+        }
+    } else if (isset($_GET['restore'])) {
+        $user = $_GET['restore'];
+        if (file_exists("log/$qid/.$user.log") && !file_exists("log/$qid/$user.log")) {
+            rename("log/$qid/.$user.log", "log/$qid/$user.log");
+            foreach(glob("log/$qid/.$user-*") as $img)
+                rename($img, "log/$qid/".substr(basename($img),1));
+            echo "<pre>Restored $user's previously-archived $qid</pre>";
+        } else {
+            echo "<pre>Failed to restore $user's $qid</pre>";
+        }
+    }
+}
+
+handleArchive();
 imgup();
 newRegrade($_GET['qid']);
 showQuiz($_GET['qid'], isset($_GET['view_only']));

@@ -139,6 +139,7 @@ function qparse($qid,$abspath=FALSE) {
             "hide"=>false,
             "draft"=>false,
             "regrades"=>true,
+            "imgneeded"=>false,
         );
         
         $fh = fopen($filename, 'rb');
@@ -512,6 +513,9 @@ function aparse($qobj, $sid) {
     }
     $ans['time_left'] = $time_left;
     $ans['may_submit'] = $ans['may_view'] && !$ans['may_view_key'] && $time_left >= 0;
+    
+    if ($time_left < 0 && $qobj['imgneeded'] && count(glob("log/$qobj[slug]/$ans[slug]-*")) == 0) $ans['started'] = false;
+
     
     $_aparse["$qobj[slug] $sid"] = $ans;
     return $ans;

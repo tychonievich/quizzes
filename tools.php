@@ -692,6 +692,7 @@ function histogram($qobj, &$review=FALSE) {
         if (in_array($student, $metadata['staff'])) continue;
         if ($section && (!isset($smap[$student]) || $smap[$student] != $section)) continue;
         $sobj = aparse($qobj['slug'], $student);
+        if (!$sobj['started']) continue;
         $hist['total'] += 1;
         $hist['right'] += grade($qobj, $sobj, $review, $hist);
     }

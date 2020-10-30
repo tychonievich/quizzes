@@ -422,6 +422,8 @@ function aparse($qobj, $sid) {
                 $slug = $obj['slug'];
                 if (isset($obj['grade'])) $ans[$slug]['grade'] = $obj['grade'];
                 if (isset($obj['rubric'])) $ans[$slug]['rubric'] = $obj['rubric'];
+                if (isset($obj['date']) && !isset($ans['start']))
+                    $ans['start'] = strtotime($obj['date']);
                 if (isset($ans[$obj['slug']]['chat'])) {
                     $entry = array(
                         'from'=>'staff',
@@ -496,6 +498,10 @@ function aparse($qobj, $sid) {
     // compute permissions and time remaining
     global $metadata;
     $now = time();
+    if (isset($metadata['extension'][$qobj['slug']][$sid])) {
+        $olddue = $qobj['due'];
+        $qobj['due'] += 60*60*24*$metadata['extension'][$qobj['slug']][$sid];
+    }
     // view any open quiz, even if time's up
     $ans['may_view'] = in_array($sid, $metadata['staff']) 
         || ($qobj['open'] <= $now && !$qobj['draft']);
@@ -515,6 +521,11 @@ function aparse($qobj, $sid) {
     $ans['may_submit'] = $ans['may_view'] && !$ans['may_view_key'] && $time_left >= 0;
     
     if ($time_left < 0 && $qobj['imgneeded'] && count(glob("log/$qobj[slug]/$ans[slug]-*")) == 0) $ans['started'] = false;
+
+    if (isset($metadata['extension'][$qobj['slug']][$sid])) {
+        // fix due date in case others are here too
+        $qobj['due'] = $olddue;
+    }
 
     
     $_aparse["$qobj[slug] $sid"] = $ans;

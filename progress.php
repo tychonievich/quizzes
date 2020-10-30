@@ -10,12 +10,14 @@ $outline['name'] = 'CS 2102';
 /**
  * return the score the student earned on the given task.
  * Also sets &$status to one of
- * 'taken', 'future', 'missed'
+ * 'taken', 'future', 'missed', 'excused'
  */
 function oneScore($task, &$status=FALSE) {
-    global $user;
+    global $user, $metadata;
     $qobj = qparse($task);
-    if (!$qobj || isset($qobj['error']) || $qobj['keyless'] || $qobj['draft'] || $qobj['due'] > time()) $status = 'future';
+    if (isset($metadata['excuse'][$task]) && in_array($user, $metadata['excuse'][$task]))
+        $status = 'excused';
+    else if (!$qobj || isset($qobj['error']) || $qobj['keyless'] || $qobj['draft'] || $qobj['due'] > time()) $status = 'future';
     else if (!file_exists("log/$task/$user.log")) $status = 'missed';
     else {
         $status = 'taken';
@@ -48,6 +50,7 @@ function annotate(&$outline) {
         foreach($outline['parts'] as &$obj) {
             $weight = isset($obj['weight']) ? $obj['weight'] : 1;
             annotate($obj);
+            if ($obj['status'] == 'excused') continue;
             if ($obj['status'] == 'future') {
                 $closed = FALSE;
             } else {
@@ -66,6 +69,7 @@ function annotate(&$outline) {
         $outline['earned'] = 0;
         foreach($outline['parts'] as &$obj) {
             annotate($obj);
+            if ($obj['status'] == 'excused') continue;
             if ($obj['status'] == 'taken' && $obj['earned']) {
                 $outline['status'] = 'taken';
                 if ($obj['earned'] < $outline['earned']) {
@@ -86,6 +90,7 @@ function annotate(&$outline) {
             $outline['earned'] = 0;
             foreach($outline['parts'] as &$obj) {
                 annotate($obj);
+                if ($obj['status'] == 'excused') continue;
                 if ($obj['status'] == 'taken' && $obj['earned'] > $outline['earned']) {
                     $outline['status'] = 'taken';
                     $outline['earned'] = $obj['earned'];
@@ -103,6 +108,7 @@ function display($outline, $depth=0) {
     if ($depth == 0) {
         ?><table style="border-collapse:collapse"><thead><tr><th>Task</th><th>Weight</th><th>Score</th></tr></thead><tbody><?php
     }
+    if ($outline['status'] == 'excused') return;
     echo "<tr style='background: rgba(";
     if ($outline['status'] == 'open') echo "0,127,0,";
     else if ($outline['status'] == 'future') echo "0,0,0,";

@@ -387,7 +387,10 @@ function showQuiz($qid, $blank = false) {
         if (file_exists("log/$qid/.$user.log")) {
             echo "<div>An archived submission for $user has been removed from grading; <a href='?qid=$qid&asuser=$user&restore=$user'>restore that submission</a></div>";
         } else if (file_exists("log/$qid/$user.log")) {
-            echo "<div>$user did submit this quiz; <a href='?qid=$qid&asuser=$user&archive=$user'>archive it and remove its grade</a></div>";
+            $tmp = aparse("$qid","$user")['start'];
+            echo "<div>$user did open this quiz, first viewing it at ";
+            echo date('Y-m-d H:i:s', $tmp);
+            echo"; <a href='?qid=$qid&asuser=$user&archive=$user'>archive it and remove its grade</a></div>";
         } else {
             echo "<div>$user did not submit this quiz.</div>";
         }

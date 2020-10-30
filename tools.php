@@ -919,7 +919,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     
     if ($hist && isset($replied['feedback'])
     && ($replied['feedback'] || (isset($replied['grade']) && is_numeric($replied['grade'])))) {
-        echo "<blockquote>";
+        echo "<blockquote style='white-space: pre-wrap;'>";
         echo toHTML("**Feedback**: $replied[feedback]" . (is_numeric($replied['grade']) ? " (grade set to ".round($replied['grade']*100,0)."%)" : '')); // cache this in grader_listener??
         echo "</blockquote>";
     }

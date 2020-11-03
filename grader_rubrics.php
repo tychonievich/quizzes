@@ -151,6 +151,8 @@ function show_rubric($quizid, $q, $mq) {
     if ($mq['text']) echo '</div>';
     echo "</details>";
 
+    echo "<div id='counts'><span id='undone'>0</span> not yet graded (<span id='done'>0</span> done, <span id='idid'>0</span> by $user)</div>";
+
     $slug2html = array();
     if (isset($q['options']))
         foreach($q['options'] as $opt)
@@ -248,6 +250,7 @@ function show_rubric($quizid, $q, $mq) {
     
     window._lastOffset = 0;
     window._timeoutID = 0;
+    window._idid = new Set();
     function acceptChanges(text) {
         window.clearTimeout(window._timeoutID);
         let delta = new TextEncoder().encode(text).length;
@@ -273,6 +276,9 @@ function show_rubric($quizid, $q, $mq) {
                     })
                     t['reply'].value = JSON.parse(bits[2]);
                     console.log(bits[4],'graded',bits[0],'at',bits[3]);
+
+                    if (bits[4] == "<?=$user?>") window._idid.add(bits[0]);
+                    // else if (window._idid.has(bits[0])) window._idid.delete(bits[0]);
                 }
             })
         }
@@ -289,6 +295,12 @@ function show_rubric($quizid, $q, $mq) {
     }
 
     function viewing() {
+        let outof = document.querySelectorAll('.grade1').length;
+        let done = document.querySelectorAll('.grade1.submitted').length;
+        document.getElementById('undone').innerHTML = (outof-done);
+        document.getElementById('done').innerHTML = done;
+        document.getElementById('idid').innerHTML = window._idid.size;
+        
         let queue = [
             document.querySelector('[class="grade1"]'),
             document.querySelector('[class="grade1"] ~ [class="grade1"]'),

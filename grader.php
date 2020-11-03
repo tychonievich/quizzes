@@ -11,7 +11,7 @@ if (!$isstaff) {
 $_review = array();
 function get_review($quizid) {
     if (isset($_review[$quizid])) return $_review[$quizid];
-    if (file_exists("cache/$quizid-review.json")) {
+    if (FALSE && file_exists("cache/$quizid-review.json")) {
         $ans = json_decode(file_get_contents("cache/$quizid-review.json"), true);
     } else {
         $ans = array();

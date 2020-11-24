@@ -628,7 +628,10 @@ if ($_SERVER["PHP_AUTH_USER"] == 'lat7h') {
 //error_log(json_encode($resp));
             foreach($q['options'] as $opt)
                 if (in_array($opt['slug'],$resp)) {
-                    if (!$graded) $earn += $opt['points'];
+                    if (!$graded) {
+                        if ($q['type'] == 'checkbox') $earn += $opt['points'];
+                        else $earn = max($earn, $opt['points']);
+                    }
                     if ($hist !== FALSE)
                         if (isset($hist[$slug][$opt['slug']]))
                             $hist[$slug][$opt['slug']] += 1;
@@ -678,7 +681,7 @@ function histogram($qobj, &$review=FALSE) {
     if (!$section) {
         if (isset($_histogram[$qobj['slug']])) return $_histogram[$qobj['slug']];
         $cache_hist = "cache/$qobj[slug]-hist.json";
-        if (file_exists($cache_hist)) { // only saves 10 ms in my example run
+        if (FALSE && file_exists($cache_hist)) { // only saves 10 ms in my example run
             $cachetime = filemtime($cache_hist);
             $use_cache = $cachetime > filemtime("questions/$qobj[slug].md");
             if ($use_cache) foreach(glob("log/$qobj[slug]/*.log") as $anspath)

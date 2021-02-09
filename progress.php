@@ -14,6 +14,10 @@ $outline['name'] = 'CS 2102';
  */
 function oneScore($task, &$status=FALSE) {
     global $user, $metadata;
+    if ($user == 'mst3k') {
+        $status = 'taken';
+        return rand() / getrandmax();
+    }
     $qobj = qparse($task);
     if (isset($metadata['excuse'][$task]) && in_array($user, $metadata['excuse'][$task]))
         $status = 'excused';
@@ -27,13 +31,57 @@ function oneScore($task, &$status=FALSE) {
     return 0;
 }
 
+function doMath($eqn, $min, $max, $mean) {
+    if (is_numeric($eqn)) return $eqn/100;
+    if ($eqn == 'mean') return $mean;
+    if ($eqn == 'min') return $min;
+    if ($eqn == 'max') return $max;
+    if (isset($eqn['min'])) {
+        $ans = 10000;
+        foreach($eqn['min'] as $e) {
+            $e = doMath($e, $min, $max, $mean);
+            if ($e < $ans) $ans = $e;
+        }
+        return $ans;
+    }
+    if (isset($eqn['max'])) {
+        $ans = -10000;
+        foreach($eqn['max'] as $e) {
+            $e = doMath($e, $min, $max, $mean);
+            if ($e > $ans) $ans = $e;
+        }
+        return $ans;
+    }
+    if (isset($eqn['+'])) {
+        $ans = 0;
+        foreach($eqn['+'] as $e) {
+            $ans += doMath($e, $min, $max, $mean);
+        }
+        return $ans;
+    }
+    if (isset($eqn['*'])) {
+        $ans = 1;
+        foreach($eqn['max'] as $e) {
+            $ans *= doMath($e, $min, $max, $mean);
+        }
+        return $ans;
+    }
+    if (isset($eqn['/'])) {
+        return doMath($eqn['/'][0], $min, $max, $mean) / doMath($eqn['/'][1], $min, $max, $mean);
+    }
+    if (isset($eqn['-'])) {
+        return doMath($eqn['-'][0], $min, $max, $mean) - doMath($eqn['-'][1], $min, $max, $mean);
+    }
+    return 0;
+}
+
 $warning = '';
 function annotate(&$outline) {
     global $warning;
     if (is_string($outline)) {
         $stat = FALSE;
         $ans = array(
-            "name" => $outline,
+            "name" => "<a href='quiz.php?qid=$outline&$_SERVER[QUERY_STRING]'>$outline</a>",
             "earned" => oneScore($outline, $stat),
         );
         $ans['status'] = $stat;
@@ -98,6 +146,32 @@ function annotate(&$outline) {
             }
         }
     } break;
+    
+    case 'math': {
+        $sum = 0; $count = 0; $max = 0; $min = 100;
+        foreach($outline['parts'] as &$obj) {
+            annotate($obj);
+            if ($obj['status'] == 'excused') continue;
+            if ($obj['status'] == 'taken' && $obj['earned']) {
+                $outline['status'] = 'taken';
+                $sum += $obj['earned'];
+                $count += 1;
+                if ($obj['earned'] < $min) { $min = $obj['earned']; }
+                if ($obj['earned'] > $max) { $max = $obj['earned']; }
+            }
+        }
+        foreach($outline['parts'] as &$obj) {
+            if (!$obj['earned']) continue;
+            else if ($min == $max && $obj['earned'] == $min) $obj['weight'] = 'min and max';
+            else if ($obj['earned'] == $min) $obj['weight'] = 'min';
+            else if ($obj['earned'] == $max) $obj['weight'] = 'max';
+        }
+        if ($count > 0) {
+            $mean = $sum/$count;
+            $outline['earned'] = doMath($outline['eqn'], $min, $max, $mean);
+            $outline['status'] = 'taken';
+        }
+    } break;
 
     default:
     $outline['status'] = 'not configured '.__LINE__;
@@ -147,8 +221,9 @@ function allScores() {
     global $user, $outline, $warning;
     $section = (isset($_GET['section'])) ? $_GET['section'] : FALSE;
     $smap = json_decode(file_get_contents('sections.json'), true);
+    $fullnames = json_decode(file_get_contents('log/fullnames.json'), true);
     $olduser = $user;
-    echo "<table><thead><tr><th>User</th><th>Section</th><th>Grade</th><th>Notes</th></thead><tbody>";
+    echo "<table><thead><tr><th>User</th><th>Name</th><th>Section</th><th>Grade</th><th>Notes</th></thead><tbody>";
     foreach($smap as $cid => $sec) {
         if ($section && $sec != $section) continue;
         $user = $cid;
@@ -156,7 +231,8 @@ function allScores() {
         $score = $outline;
         annotate($score);
         $user = $olduser;
-        echo "<tr><td><a href='?asuser=$cid' target='_blank'>$cid</a></td><td><a href='?section=$sec'>$sec</a></td><td>".(100*$score['earned'])."</td><td>$warning</td></tr>";
+        $name = $fullnames[$cid];
+        echo "<tr><td><a href='?asuser=$cid' target='_blank'>$cid</a></td><td>$name</td><td><a href='?section=$sec'>$sec</a></td><td>".(100*$score['earned'])."</td><td>$warning</td></tr>";
     }
     echo "</tbody></table>";
     echo "<script type='text/javascript' src='columnsort.js'></script>";

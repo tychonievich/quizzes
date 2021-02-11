@@ -106,9 +106,9 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
         echo "<div>Most starred:";
         $num = 0;
         foreach($totals as $k=>$v) {
+            echo "   <a href='#flag$k'>Q$k<small>($v)</small></a>";
             $num += 1;
-            echo " <a href='#flag$k'>Q$k ($v)</a>";
-            if ($num > 10) break;
+            if ($num >= 10) break;
         }
         echo "</div>";
     }

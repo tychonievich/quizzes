@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <?php 
 require_once "tools.php";
+
+$path = "review/$_GET[qid].md.votes";
+if (file_exists($path)) {
+    $fh = fopen($path, "r");
+    flock($fh, LOCK_SH);
+    $len = filesize($path);
+    $txt = fread($fh, $len);
+    error_log("$len '$txt'");
+    $votes = json_decode($txt, true);
+    flock($fh, LOCK_UN);
+} else {
+    error_log("(empty)");
+    $votes = array(); 
+}
+error_log("GOT VOTES");
+
 ?>
 <html>
 <head>
@@ -10,6 +26,7 @@ require_once "tools.php";
     <style>
         body { background:#fdb; }
         .directions, .multiquestion { background: #fed;  }
+        .flag { float: right; }
     </style>
     
     <link rel="stylesheet" href="katex/katex.min.css">
@@ -25,6 +42,47 @@ require_once "tools.php";
                     {throwOnError:false, displayMode:true})
             )
         });
+    </script>
+    <script type="text/javascript">
+function ajaxSend(data) {
+	var xhr = new XMLHttpRequest();
+	if (!("withCredentials" in xhr)) {
+		return null;
+	}
+	xhr.open("POST", "review_listener.php", true);
+	xhr.withCredentials = true;
+    xhr.setRequestHeader("Content-type", 'application/json');
+	xhr.onerror = function() {
+		console.log("failed to send vote");
+	}
+    xhr.onreadystatechange = function() { 
+        if(xhr.readyState == 4) {
+            console.log("done", xhr);
+            if (xhr.status == 200) {
+                console.log("response: " + xhr.responseText);
+            }
+        }
+    }
+	xhr.send(JSON.stringify(data));
+}
+
+function toggle_vote(qnum) {
+    flag = document.getElementById('flag'+qnum);
+    up = flag.innerHTML[0] == '☆';
+    if (up) {
+        flag.firstChild.textContent = '★';
+        num = Number(flag.firstElementChild.firstChild.textContent)
+        flag.firstElementChild.firstChild.textContent = ' '+(num+1)
+    } else {
+        flag.firstChild.textContent = '☆';
+        num = Number(flag.firstElementChild.firstChild.textContent)
+        flag.firstElementChild.firstChild.textContent = ' '+(num-1)
+    }
+    var data = {'qid':"<?=$_GET['qid']?>",'question':qnum,'up':up, 'user':'<?=$user?>'}
+    ajaxSend(data);
+}
+
+console.log(<?=json_encode($votes)?>);
     </script>
 </head>
 <body>
@@ -46,11 +104,25 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
             if (!$q['points']) continue;
             $qnum += 1;
             
+            $v = 0;
+            if (isset($votes[$qnum]))
+                foreach($votes[$qnum] as $u=>$vt)
+                    $v += $vt;
+            $me = 0;
+            if (isset($votes[$qnum][$user])) $me = $votes[$qnum][$user];
+            
             echo "<div class='question'>";
             
             echo "<div class='description'>";
             echo "<strong>Question $qnum</strong>";
             if (isset($qg['text']) && $qg['text']) echo " (see above)";
+
+            echo "<span id='flag$qnum' class='flag' onclick='toggle_vote($qnum)'>";
+            if ($me) echo "★";
+            else echo "☆";
+            echo "<small> $v</small>";
+            echo"</span> ";
+
             echo "\n$q[text]";
             echo "</div>";
 

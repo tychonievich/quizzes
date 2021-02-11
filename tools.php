@@ -550,9 +550,6 @@ function gradeQuestion($q, &$sobj, &$review=FALSE, &$hist=FALSE) {
         $graded = true;
         $earn = $sobj[$slug]['grade'];
     }
-if ($_SERVER["PHP_AUTH_USER"] == 'lat7h') {
-//    echo "<script>console.log(".json_encode([__FILE__, __LINE__, $q]).")</script>";
-}
     
     if (isset($q['rubric'])) {
 

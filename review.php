@@ -8,14 +8,21 @@ if (file_exists($path)) {
     flock($fh, LOCK_SH);
     $len = filesize($path);
     $txt = fread($fh, $len);
-    error_log("$len '$txt'");
     $votes = json_decode($txt, true);
     flock($fh, LOCK_UN);
 } else {
-    error_log("(empty)");
     $votes = array(); 
 }
-error_log("GOT VOTES");
+
+if ($isstaff) {
+    $totals = array();
+    foreach($votes as $k=>$v) {
+        $cnt = 0;
+        foreach($v as $u=>$n) $cnt += $n;
+        $totals[$k] = $cnt;
+    }
+    arsort($totals);
+}
 
 ?>
 <html>
@@ -94,6 +101,17 @@ if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'],
 
     echo "<h1 style='text-align:center'>$qobj[title]</h1>";
     echo "<div class='directions'>$qobj[directions]</div>";
+
+    if ($isstaff) {
+        echo "<div>Most starred:";
+        $num = 0;
+        foreach($totals as $k=>$v) {
+            $num += 1;
+            echo " <a href='#flag$k'>Q$k ($v)</a>";
+            if ($num > 10) break;
+        }
+        echo "</div>";
+    }
 
     $qnum = 0;
     foreach($qobj['q'] as $qg) {

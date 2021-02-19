@@ -2,7 +2,7 @@
 <?php 
 require_once "tools.php";
 
-$path = "review/$_GET[qid].md.votes";
+$path = "cache/votes-$_GET[qid]";
 if (file_exists($path)) {
     $fh = fopen($path, "r");
     flock($fh, LOCK_SH);

@@ -221,7 +221,7 @@ function allScores() {
     global $user, $outline, $warning;
     $section = (isset($_GET['section'])) ? $_GET['section'] : FALSE;
     $smap = json_decode(file_get_contents('sections.json'), true);
-    $fullnames = json_decode(file_get_contents('log/fullnames.json'), true);
+    $fullnames = json_decode(file_get_contents('fullnames.json'), true);
     $olduser = $user;
     echo "<table><thead><tr><th>User</th><th>Name</th><th>Section</th><th>Grade</th><th>Notes</th></thead><tbody>";
     foreach($smap as $cid => $sec) {

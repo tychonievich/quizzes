@@ -23,7 +23,8 @@ if (isset($qobj['error'])) {
     exit;
 }
 
-$path = "review/$qid.md.votes";
+$path = "cache/votes-$qid";
+//$path = "review/$qid.md.votes";
 
 $fh = fopen($path, "r+");
 if (!$fh) { fclose(fopen($path, "w+")); $fh = fopen($path, "r+"); }

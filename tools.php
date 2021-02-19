@@ -113,7 +113,8 @@ function qparse($qid,$abspath=FALSE) {
     if ($abspath && file_exists($qid)) {
         $filename = $qid;
         // $qid = basename($qid, ".md");
-        $cache = $filename.".cache";
+        $cache = "cache/".str_replace("/","-",$qid).".json";
+        //$cache = $filename.".cache";
     } else {
         if (stristr($qid, "/")) return $_qparse[$qid] = array('error'=>"no quiz named $qid");
         $filename = "questions/$qid.md";
@@ -294,7 +295,7 @@ function qparse($qid,$abspath=FALSE) {
             if ($q !== FALSE) { // done with a question; error-check and possibly re-type
                 if ($q['type'] == 'image') {
                     if (count($options) || count($keys))
-                        return array('error'=>'contradictory data: image questions cannot have answer keys');
+                        return array('error'=>'contradictory data: image questions cannot have answer keys\n'.json_encode($options)."\n".json_encode($keys));
                 } else if ($q['type'] == 'checkbox') {
                     if (count($options) == 0)
                         return array('error'=>'contradictory data: multiple-select questions must have options to pick from');

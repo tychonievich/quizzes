@@ -40,7 +40,7 @@ function doMath($eqn, $min, $max, $mean) {
         $ans = 10000;
         foreach($eqn['min'] as $e) {
             $e = doMath($e, $min, $max, $mean);
-            if ($e < $ans) $ans = $e;
+            if ($e && $e < $ans) $ans = $e;
         }
         return $ans;
     }
@@ -61,7 +61,7 @@ function doMath($eqn, $min, $max, $mean) {
     }
     if (isset($eqn['*'])) {
         $ans = 1;
-        foreach($eqn['max'] as $e) {
+        foreach($eqn['*'] as $e) {
             $ans *= doMath($e, $min, $max, $mean);
         }
         return $ans;
@@ -118,8 +118,8 @@ function annotate(&$outline) {
         foreach($outline['parts'] as &$obj) {
             annotate($obj);
             if ($obj['status'] == 'excused') continue;
-            if ($obj['status'] == 'taken' && $obj['earned']) {
-                $outline['status'] = 'taken';
+            if (($obj['status'] == 'taken' || $obj['status'] == 'open') && $obj['earned']) {
+                $outline['status'] = $obj['status'];
                 if ($obj['earned'] < $outline['earned']) {
                     $warning .= "<q>$obj[name]</q> decreased grade\n";
                 }
@@ -149,11 +149,12 @@ function annotate(&$outline) {
     
     case 'math': {
         $sum = 0; $count = 0; $max = 0; $min = 100;
+        $outline['status'] = 'future';
         foreach($outline['parts'] as &$obj) {
             annotate($obj);
             if ($obj['status'] == 'excused') continue;
-            if ($obj['status'] == 'taken' && $obj['earned']) {
-                $outline['status'] = 'taken';
+            if (($obj['status'] == 'taken' || $obj['status'] == 'open') && $obj['earned']) {
+                $outline['status'] = $obj['status'];
                 $sum += $obj['earned'];
                 $count += 1;
                 if ($obj['earned'] < $min) { $min = $obj['earned']; }

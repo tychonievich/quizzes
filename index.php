@@ -67,7 +67,7 @@ foreach($qsortting as $i=>$qpair) {
     echo "<td align=center>".durationString($sobj['time_left'])."</td>";
 
     echo "<td align=center>";
-    if (!$sobj['may_view'] || $qobj['open'] > time()) {
+    if (!$sobj['may_view'] || $sobj['open'] > time()) {
         echo "not yet open";
     } else if ($sobj['may_view_key']) {
         $sid = $sobj['slug'];
@@ -88,7 +88,33 @@ foreach($qsortting as $i=>$qpair) {
         echo "closed";
     }
     if ($isstaff && $qobj['due'] < time()) {
-        echo "<br/><a href='grader.php?qid=$name'>grader site</a>";
+        echo "<br/><a href='grader.php?qid=$name'>grader site";
+        ////////////////////////////////////////////////////////////////
+        if (file_exists("log/$name/regrades.log")) {
+            $fh = fopen("log/$name/regrades.log", "r");
+            $open = array();
+            $cnt = 0;
+            while(($line = fgets($fh)) != FALSE) {
+                $rgent = json_decode($line, true);
+                $key = "$rgent[student].$rgent[task]";
+                if ($rgent['add']) {
+                    if (!isset($open[$key]) || !$open[$key]) {
+                        $open[$key] = true;
+                        $cnt += 1;
+                    }
+                } else {
+                    if (isset($open[$key]) && $open[$key]) {
+                        $open[$key] = false;
+                        $cnt -= 1;
+                    }
+                }
+            }
+            fclose($fh);
+            if ($cnt > 0)
+                echo " ($cnt regrades)";
+        }
+        ////////////////////////////////////////////////////////////////
+        echo "</a>";
     }
     echo "</td>";
     

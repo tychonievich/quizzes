@@ -503,6 +503,10 @@ function aparse($qobj, $sid) {
         $olddue = $qobj['due'];
         $qobj['due'] += 60*60*24*$metadata['extension'][$qobj['slug']][$sid];
     }
+    if (isset($metadata['early'][$qobj['slug']][$sid])) {
+        $oldopen = $qobj['open'];
+        $qobj['open'] -= 60*60*24*$metadata['early'][$qobj['slug']][$sid];
+    }
     // view any open quiz, even if time's up
     $ans['may_view'] = in_array($sid, $metadata['staff']) 
         || ($qobj['open'] <= $now && !$qobj['draft']);

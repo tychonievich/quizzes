@@ -1,10 +1,19 @@
 <?php 
 require_once "tools.php";
-if (!$isstaff) exit('must be staff to record grade adjustments');
+if (!$isstaff) exit('{"error":"must be staff to record grade adjustments"}');
 
 $raw = file_get_contents("php://input");
 $data = json_decode($raw, true);
 if (!isset($data['kind'])) exit("invalid request:\n$raw\n".json_encode($data));
+
+if (isset($data['slug']) && isset($data['user'])) {
+    putlog("$data[quiz]/regrades.log", json_encode(array(
+        'student'=>$data['user'],
+        'task'=>$data['slug'],
+        'add'=>false,
+        'date'=>date('Y-m-d H:i:s'),
+    ))."\n");
+}
 
 if ($data['kind'] == 'rubric') {
     // {"quiz":quiz_id, "slug":question_id

@@ -1,7 +1,8 @@
 /*
  * Custom column sorting application by Luther Tychonievich, 2013-04-15
  * and edited multiple times thereafter.
- * Treats numbers a single entities; this a22b33c < a22b100c
+ * Treats numbers a single entities; thus a22b33c < a22b100c
+ * One period is allowed, two are not
  */
 
 function compareColumn( column ) {
@@ -21,10 +22,28 @@ function compareColumn( column ) {
                     ac = ac*10 + a.charCodeAt(i) - 48;
                     i += 1;
                 }
+                if (i < a.length && a.charCodeAt(i) == 46) {
+                    i += 1;
+                    var mult = 0.1
+                    while (i < a.length && a.charCodeAt(i) >= 48 && a.charCodeAt(i) <= 57) {
+                        ac += mult * (a.charCodeAt(i) - 48);
+                        i += 1;
+                        mult /= 10;
+                    }
+                }
                 bc -= 48;
                 while (j < b.length && b.charCodeAt(j) >= 48 && b.charCodeAt(j) <= 57) {
                     bc = bc*10 + b.charCodeAt(j) - 48;
                     j += 1;
+                }
+                if (j < b.length && b.charCodeAt(j) == 46) {
+                    j += 1;
+                    var mult = 0.1
+                    while (j < b.length && b.charCodeAt(j) >= 48 && b.charCodeAt(j) <= 57) {
+                        bc += mult * (b.charCodeAt(j) - 48);
+                        j += 1;
+                        mult /= 10;
+                    }
                 }
             } 
             if (ac != bc) return ac - bc;

@@ -308,6 +308,13 @@ function newRegrade($qid) {
         'date'=>date('Y-m-d H:i:s'),
     ))."\n");
 
+    putlog("$qid/regrades.log", json_encode(array(
+        'student'=>$user,
+        'task'=>$_POST['regrade'],
+        'add'=>true,
+        'date'=>date('Y-m-d H:i:s'),
+    ))."\n");
+
     // if a rubric, also post a rubric clear action
     if (file_exists("log/$qid/gradelog_$_POST[regrade].lines"))
         putlog("$qid/gradelog_$_POST[regrade].lines", "$user\tnull\t\"\"\t".date('Y-m-d H:i:s')."\t$_SERVER[PHP_AUTH_USER]\n");
@@ -342,7 +349,7 @@ function showQuiz($qid, $blank = false) {
    
     echo "<div class='directions'>$qobj[directions]</div>";
     
-    if ($qobj['qorder'] == 'shuffle' && $hist === false && !$isstaff) {
+    if ($qobj['order'] == 'shuffle' && $hist === false && !$isstaff) {
         srand(crc32("$user $qobj[slug]"));
         shuffle($qobj['q']);
     }

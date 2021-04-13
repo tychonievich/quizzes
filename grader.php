@@ -17,6 +17,28 @@ function get_review($quizid) {
         $ans = array();
         histogram($quizid, $ans);
     }
+    if (file_exists("log/$quizid/regrades.log")) {
+        $fh = fopen("log/$quizid/regrades.log", "r");
+        while(($line = fgets($fh)) != FALSE) {
+            $rgent = json_decode($line, true);
+            if (!isset($ans["$rgent[task]-regrade"]))
+                $ans["$rgent[task]-regrade"] = array();
+            if ($rgent['add']) {
+                $ans["$rgent[task]-regrade"][$rgent['student']] = true;
+            } else {
+                unset($ans["$rgent[task]-regrade"][$rgent['student']]);
+            }
+        }
+        fclose($fh);
+        foreach($ans as $key=>$val) if (substr($key, 8) == '-regrade') {
+            $slug = substr($key,0,8);
+            if (!isset($ans[$slug])) $ans[$slug] = array();
+            foreach($val as $user=>$dump) {
+                if (!in_array($user, $ans[$slug])) $ans[$slug][] = $user;
+            }
+        }
+    }
+    
     $_review[$quizid] = $ans;
     return $ans;
 }
@@ -54,6 +76,10 @@ function get_blanks($quizid, $q) {
     return $ans;
 }
 
+function null_first($a,$b) {
+    if ($a === null) return $b === null ? 0 : -1;
+    return $b === null ? 1 : 0;
+}
 /**
  * Given a quiz and one of its questions, return an array.
  * keys are users
@@ -77,7 +103,10 @@ function get_comments($quizid, $slug) {
             );
         }
     }
-    foreach($whom as $k=>$v) if (isset($v['regrade'])) $ans[$k] = null;
+    foreach($ans as $k=>$v) {
+        if (isset($rev["$slug-regrade"][$k])) $ans[$k] = null;
+    }
+    uasort($ans, 'null_first');
     return $ans;
 }
 
@@ -325,6 +354,12 @@ echo "<script>console.log(".json_encode(array_keys($rev)).")</script>";
             if ($left == 0) echo ' class="submitted"';
             echo ">".($of-$left)." of $of";
             echo "</td><td>".$questions[$slug]['text']."</td></tr>\n";
+        }
+        foreach($rev as $slug=>$val) if (substr($slug,8) == '-regrade') {
+            $num = count($val);
+            if (!$num) continue;
+            $slug = substr($slug,0,8);
+            echo "<tr><td>regrade</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=comment'>$slug</a></td><td>0 of $num</td><td>".$questions[$slug]['text']."</td></tr>\n";
         }
         foreach($rev as $slug=>$val) if (strlen($slug) == 8) {
             echo "<tr><td>comment</td><td><a href='?qid=$_GET[qid]&amp;slug=$slug&amp;kind=comment'>$slug</a></td><td";

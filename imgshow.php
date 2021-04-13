@@ -2,7 +2,7 @@
 
 require_once "authenticate.php";
 
-if (!$_GET['qid'] || !$_GET['slug'] || strpos($_GET['qid'],'/') !== FALSE || strpos($_GET['slug'],'/') !== FALSE || strpos($_GET['slug'],'-') !== FALSE) {
+if (!$_GET['qid'] || !$_GET['slug'] || strpos($_GET['qid'],'/') !== FALSE || strpos($_GET['slug'],'/') !== FALSE /*|| strpos($_GET['slug'],'-') !== FALSE*/) {
     http_response_code(403);
     die("Invalid request");
 }

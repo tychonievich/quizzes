@@ -129,7 +129,7 @@ function show_blanks($quizid, $q, $mq) {
             if ($weight > $score) $score = $weight;
         }
         if (isset($details['decided'])) $score = $details['decided'];
-        echo "<p>Points: <input type='text' id='a-$anum' value='$score' onchange='setKey(\"$anum\",".json_encode($opt).")' onkeydown='pending($\"$anum\")'/>";
+        echo "<p>Points: <input type='text' id='a-$anum' value='$score' onchange='setKey(\"$anum\",".json_encode(str_replace("'","’",$opt)).")' onkeydown='pending($\"$anum\")'/>";
         if (!isset($details['decided']))
             echo "<input type='button' onclick='setKey(\"$anum\",".json_encode($opt).")' id='delme-$anum' value='no reply needed'/>";
         echo "</p>";

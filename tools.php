@@ -450,6 +450,8 @@ function aparse($qobj, $sid) {
                     if (isset($ans[$slug]['regrade'])) unset($ans[$slug]['regrade']);
                     if (isset($ans[$slug]['chat'])) unset($ans[$slug]['chat']);
                 }
+                if (isset($obj['date']) && !isset($ans['start']))
+                    $ans['start'] = strtotime($obj['date']);
             } else if (isset($obj['request'])) { // regrade request
                 if (!isset($ans[$obj['slug']]['chat'])) {
                     $ans[$obj['slug']]['chat'] = array();

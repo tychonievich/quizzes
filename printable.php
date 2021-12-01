@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <?php 
 require_once "tools.php";
+if (!$isstaff) die("Staff only"); // IMPORTANT! This code does not check may_view so must black non-staff users
 ?>
 <html>
 <head>
@@ -41,7 +42,7 @@ require_once "tools.php";
 <?php
 
 function showQuiz($qid, $seed = false) {
-    global $user, $metadata, $isstaff, $realisstaff;
+    global $user;
     $qobj = qparse($qid);
     if (isset($qobj['error'])) { echo $qobj['error']; return; }
     
@@ -52,16 +53,7 @@ function showQuiz($qid, $seed = false) {
     
     echo "<p>Name: <input type='text' style='width:4in'>";
     echo "Computing ID: <input type='text' style='width:1in'></p>";
-    
-    $sobj = aparse($qobj, $user);
-    if (!$sobj['may_view']) { echo "You may not view this quiz"; return; }
 
-    if ($isstaff && isset($_GET['showkey'])) {
-        $sobj['may_view_key'] = true;
-        echo "<center class='count'>".count(glob("log/$qid/*.log"))." people have viewed this quiz</center>";
-    }
-    
-       
     if ($qobj['order'] == 'shuffle' && $seed) {
         srand(crc32("$seed $qobj[slug]"));
         shuffle($qobj['q']);

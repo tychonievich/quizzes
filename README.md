@@ -266,64 +266,6 @@ Text following Multiquestion and preceding the next Subquestion will appear as d
     Question
     stand-alone
 
-## Course Grade
-
-You may optionally include a file name `weights.json` which enabled a grade-preview option.
-This file allows a hierarchical rubric made of several parts.
-
-A part is a JSON object with the following keys
-
-- `name`, used to display this group of grade components to students
-- `weight`, which defaults to `1`
-- `parts`, an array of subordinate parts
-- `type`, which is one of the following options:
-
-    | `type` | Meaning |
-    |:------ |:------- |
-    | `groups` | Score = weighted average of scores of `parts` |
-    | `replace` | Score = last taken quiz from `parts` |
-    | `best` | Score = drop the lowest `drop` scores from `parts` and weighted average the others; or keep the highest one if `drop` not given |
-    | `math` | computes min, max, and mean of `parts` and then does math expressed in `eqn` |
-    | `item` | look up the score of the value of `name` |
-
-A string can be used in place of a part; `"01"` is treated as `{"type":"item","name":"01"}`.
-
-Math is expressed as
-
-- numbers
-- the variables `"min"`, `"max"`, and `"mean"`
-- an object with key `min` an value an array of math; returns the minimum value in that array
-- an object with key `max` an value an array of math; returns the maximum value in that array
-- an object with key `+` an value an array of math; returns the sum of all value in that array
-- an object with key `*` an value an array of math; returns the product of all value in that array
-- an object with key `/` an value an array of two math elements; returns the first divided by the second
-- an object with key `-` an value an array of two math elements; returns the first minus the second
-
-
-## Extensions and Excusing
-
-`course.json` may optionally include the following:
-
-```json
-{...
-"excuse":
-    {"01":["mst3k", "tj1a"]
-    ,"another_quiz":["lat7h"]
-    }
-,"extension":
-    {"01":{"lat7h":2.5}
-    }
-,"early":
-    {"02paper":{"mst3k":1}
-    }
-}
-```
-
-Excusing an assignment will only have impact if `weights.json` is used.
-
-The units of `extension` and `early` are days, and will let the student start the assignment in an expanded time window.
-Be careful in using these: it is possible to extend a quiz for one student until after its key was released for all other students.
-
 
 ## Grading Quizzes
 
@@ -345,6 +287,8 @@ This is an incomplete extension under active development:
     - assumes `{"slug":"318c8248","feedback":"","rubric":[1,0,0.5]}`{.json} format (just those three keys, just list-of-numb grade)
 - [x] grading interface shows rubric
 - [x] multiple graders on same question supported without collisions
+- [ ] display grade ranges before grading
+- [ ] display "not yet graded"
 
 If a question has a line `rubric:`, following material will be taken as part of the rubric as follows:
 
@@ -360,10 +304,6 @@ If a question has a line `rubric:`, following material will be taken as part of 
 **Bug**: currently, hidden rubric items (`x.`) still have to be graded. There are several places the code needs to change to fix that (display, error-checking, grade array creation, grading).
 
 **Warning**: rubric grading has only been tested with image questions so far, and that only a little. Other bugs likely.
-
-- [ ] display grade ranges before grading
-- [ ] display "not yet graded"
-
 
 If there is a rubric, then the question is ungraded until a human grades it.
 Post-autograde pre-human grade, the quiz grade shows as a grade range, as e.g. "3--7 / 8 (37--88%)"
@@ -443,6 +383,7 @@ A few options are only available by staff editing URLs directly
 - If you are staff and add `asuser=mst3k` as a query parameter (e.g. `quiz.php?qid=03&asuser=mst3k`), then you'll see the page `mst3k` sees, including their answers, etc.
 - If you are staff and add `showkey` as a query parameter (e.g., `quiz.php?qid=03&showkey`) then you'll be able to see the key even before the quiz closes.
 - If you are staff and add `section=XYZ` as a query parameter (e.g., `index.php?section=9`), and if you have a file named `sections.json` with studnet IDs as keys and section names as values, like `{"mst3k":9,"lat7h":10,"tj1a":9}`{.json}, then all grade averages and response percentages will be computed based only on students in that section.
+- There's a hidden URL `printable.php?qid=03` that is a printer-friendly, no-submissions version of `quiz.php`.
 
 ## Known bugs
 

@@ -67,7 +67,7 @@ foreach($qsortting as $i=>$qpair) {
     echo "<td align=center>".durationString($sobj['time_left'])."</td>";
 
     echo "<td align=center>";
-    if (!$sobj['may_view'] || $sobj['open'] > time()) {
+    if (!$sobj['may_view'] || $qobj['open'] > time()) {
         echo "not yet open";
     } else if ($sobj['may_view_key']) {
         $sid = $sobj['slug'];

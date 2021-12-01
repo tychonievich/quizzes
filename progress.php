@@ -5,7 +5,8 @@
 require_once "tools.php";
 
 $outline = json_decode(file_get_contents('weights.json'), true);
-$outline['name'] = 'CS 2102';
+$outline['name'] = 'CS 4810';
+
 
 /**
  * return the score the student earned on the given task.
@@ -132,7 +133,23 @@ function annotate(&$outline) {
         if (isset($outline['keep'])) {
             $outline['status'] = 'not configured '.__LINE__;
         } else if (isset($outline['drop'])) {
-            $outline['status'] = 'not configured '.__LINE__;
+            $scores = array();
+            $outline['status'] = 'taken';
+            $outline['earned'] = 0;
+            foreach($outline['parts'] as &$obj) {
+                annotate($obj);
+                if ($obj['status'] == 'excused') continue;
+                if ($obj['status'] == 'taken') $scores[] = $obj['earned'];
+                else $outline['status'] = 'open';
+            }
+            if (count($scores) <= $outline['drop']) {
+                $outline['status'] = 'future';
+            } else {
+                sort($scores);
+                $total = 0;
+                foreach($scores as $i=>$v) if ($i >= $outline['drop']) $total += $v;
+                $outline['earned'] = $total / (count($scores) - $outline['drop']);
+            }
         } else {
             $outline['status'] = 'future';
             $outline['earned'] = 0;
@@ -172,6 +189,13 @@ function annotate(&$outline) {
             $outline['earned'] = doMath($outline['eqn'], $min, $max, $mean);
             $outline['status'] = 'taken';
         }
+    } break;
+
+    case 'item': {
+        $stat = FALSE;
+        $outline['earned'] = oneScore($outline['name'], $stat);
+        $outline['status'] = $stat;
+        $outline['name'] = "<a href='quiz.php?qid=$outline&$_SERVER[QUERY_STRING]'>$outline[name]</a>";
     } break;
 
     default:
@@ -221,8 +245,8 @@ function ownScore() {
 function allScores() {
     global $user, $outline, $warning;
     $section = (isset($_GET['section'])) ? $_GET['section'] : FALSE;
-    $smap = json_decode(file_get_contents('sections.json'), true);
-    $fullnames = json_decode(file_get_contents('fullnames.json'), true);
+    $smap = file_exists('sections.json') ? json_decode(file_get_contents('sections.json'), true) : array();
+    $fullnames = file_exists('fullnames.json') ? json_decode(file_get_contents('fullnames.json'), true) : array();
     $olduser = $user;
     echo "<table><thead><tr><th>User</th><th>Name</th><th>Section</th><th>Grade</th><th>Notes</th></thead><tbody>";
     foreach($smap as $cid => $sec) {
@@ -240,7 +264,9 @@ function allScores() {
     echo "<script type='text/javascript'>hookAllTables()</script>";
 }
 
-if ($isstaff) {
+if (isset($justlibrary) && $justlibrary) {
+    // ...
+} else if ($isstaff) {
     allScores();
 } else {
     ownScore();

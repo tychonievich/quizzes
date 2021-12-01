@@ -194,7 +194,7 @@ function qparse($qid,$abspath=FALSE) {
                     $keys[] = array('text'=>trim(substr($line, 4)), 'points'=>1);
                 } else {
                     $kv = explode('):', $line, 2);
-                    $keys[] = array('text'=>trim(kv[1]), 'points'=>floatval(substr($kv[0],4)));
+                    $keys[] = array('text'=>trim($kv[1]), 'points'=>floatval(substr($kv[0],4)));
                 }
                 continue; 
             }
@@ -774,34 +774,54 @@ function fractionOf($num) {
     return ' ';
 }
 
-function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false, $regrades=false){
+function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false, $regrades=false, $printmode=false){
     global $metadata, $realisstaff;
     $postcall = "postAns(".htmlspecialchars(json_encode($quizid)).", $qnum)";
     
-    echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
-
-    echo "<div class='description' id='d$qnum'>";
-    echo "<strong>Question $qnum</strong>";
-    if (!$q['points']) {
-        echo " (dropped)";
-    } else if ($hist && isset($replied['score'])) {
-        echo " (".round($replied['score'],2)." / $q[points] pt";
-        if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
-            echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
-        else echo ")";
-    } else if ($hist && !isset($q['rubric']) && $q['type'] != 'image') {
-        echo " ($q[points] pt";
-        if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
-            echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
-        else echo ")";
+    if ($printmode) {
+        if ($qnum) {
+            echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
+            echo "<div class='label'>";
+            echo "<strong>$qnum.</strong> ($q[points] pt) ";
+            echo "</div>";
+        } else {
+            echo " ($q[points] pt)";
+        }
+        echo "<div class='description' id='d$qnum'>";
+        echo "\n$q[text]";
+        echo "</div>";
     } else {
-        if ($q['points'] != 1) echo $q['points'] ? " ($q[points] points)" : " (dropped)";
+
+        echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
+
+        
+        echo "<div class='description' id='d$qnum'>";
+        echo "<strong>Question $qnum</strong>";
+        if (!$q['points']) {
+            echo " (dropped)";
+        } else if ($hist && isset($replied['score'])) {
+            echo " (".round($replied['score'],2)." / $q[points] pt";
+            if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
+                echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
+            else echo ")";
+        } else if ($hist && !isset($q['rubric']) && $q['type'] != 'image') {
+            echo " ($q[points] pt";
+            if (isset($hist[$q['slug']]) && $hist[$q['slug']]['total'])
+                echo "; mean ".round($hist[$q['slug']]['right']/$hist[$q['slug']]['total'],2).")";
+            else echo ")";
+        } else {
+            if ($q['points'] != 1) echo $q['points'] ? " ($q[points] points)" : " (dropped)";
+        }
+        if ($seeabove) echo " (see above)";
+        echo "\n$q[text]";
+        echo "</div>";
     }
-    if ($seeabove) echo " (see above)";
-    echo "\n$q[text]";
-    echo "</div>";
 
     if ($q['type'] == 'radio' || $q['type'] == 'checkbox') {
+        if ($printmode) {
+            if ($q['type'] == 'radio') echo "<strong>Pick One</strong>";
+            else echo "<strong>Select all that apply</strong>";
+        }
         echo '<ol class="options">';
         
         // should I shuffle (or sort) options?
@@ -939,14 +959,13 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "</dl></blockquote>";
     }
 
-    echo "<script>console.log(".json_encode(array($regrades, $ajax, $hist),true).")</script>";
     if ($regrades && $hist) {
         echo "<details><summary>Regrade request</summary><form method='POST'><div class='tinput'><textarea name='request'></textarea><input type='submit' value='submit request'/></div><input type='hidden' name='regrade' value='$q[slug]'/></form></details>";
     }
 
 
 
-    echo "</div>";
+    if (!$printmode || $qnum) echo "</div>";
 }
 
 

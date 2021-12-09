@@ -10,16 +10,19 @@ if (!$isstaff) die("Staff only"); // IMPORTANT! This code does not check may_vie
     <link rel="stylesheet" href="style.css">
     <style>
         html { font-size: 10pt; }
+        body { columns: 2; }
         body, .directions, .multiquestion { background:#fff; }
-        input[type="text"] { background: none; border: none; border-bottom: thin solid black; width: 5in; padding-top: 1em; }
+        input[type="text"] { background: none; border: none; border-bottom: thin solid black; width: 3in; padding-top: 1em; }
         ol.options > li { list-style: none; }
         .label { display: float; float: left; clear: both; padding-right: 1ex; }
         strong + ol.options { margin-top: 0.5ex; }
         ol.options { margin-left: -1.5em; }
-        .question { page-break-inside: avoid; }
+        .question { page-break-inside: avoid; margin-left: 0em; }
         .multiquestion { page-break-inside: avoid; }
+        .multiquestion > .question { margin-bottom: 0em; margin-left: 1em; }
         p { margin: 0; }
         p + p { text-indent: 1.5em; }
+        .multiquestion > .question { display: inline-block; vertical-align: top; }
     </style>
     
     <link rel="stylesheet" href="katex/katex.min.css">
@@ -46,15 +49,15 @@ function showQuiz($qid, $seed = false) {
     $qobj = qparse($qid);
     if (isset($qobj['error'])) { echo $qobj['error']; return; }
     
-    $title = $seed ? "$qobj[title] - Variant $seed" : $qobj['title'];
+    $title = $seed ? "$qobj[title] (v.$seed)" : $qobj['title'];
 
     echo "<h1 style='text-align:center'>$title</h1>";
     echo "<script>document.title = '$title'</script>";
     
-    echo "<p>Name: <input type='text' style='width:4in'>";
-    echo "Computing ID: <input type='text' style='width:1in'></p>";
+    echo "<p>Name: <input type='text' style='width:3in'>";
+    echo "<br/>Computing ID: <input type='text' style='width:1in'></p>";
 
-    if ($qobj['order'] == 'shuffle' && $seed) {
+    if ($qobj['qorder'] == 'shuffle' && $seed) {
         srand(crc32("$seed $qobj[slug]"));
         shuffle($qobj['q']);
     }
@@ -96,6 +99,10 @@ function showQuiz($qid, $seed = false) {
 showQuiz($_GET['qid'], $_GET['seed']);
 
 ?>
+<script>
+document.querySelectorAll('.label').forEach(x=>x.nextElementSibling.prepend(x))
+document.querySelectorAll('.label').forEach(x=>x.nextElementSibling.prepend(x))
+</script>
 <div class="multiquestion"><strong>Pledge:</strong>
 <p>On my honor, I pledge that I have neither given nor received help on this assignment.</p>
 Signature: <input type="text"/>

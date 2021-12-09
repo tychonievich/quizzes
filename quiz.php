@@ -349,7 +349,7 @@ function showQuiz($qid, $blank = false) {
    
     echo "<div class='directions'>$qobj[directions]</div>";
     
-    if ($qobj['order'] == 'shuffle' && $hist === false && !$isstaff) {
+    if ($qobj['qorder'] == 'shuffle' && $hist === false && !$isstaff) {
         srand(crc32("$user $qobj[slug]"));
         shuffle($qobj['q']);
     }

@@ -342,6 +342,7 @@ Math is expressed as
 - an object with key `/` an value an array of two math elements; returns the first divided by the second
 - an object with key `-` an value an array of two math elements; returns the first minus the second
 
+By default, missed items are not included in averages so that students won't see grades drop between submission and grading times. You can change that by including a top-level key `"deadline":"2021-12-14"` or the like; after that day, missed items will be included as 0s in averages.
 
 ## Extensions and Excusing
 

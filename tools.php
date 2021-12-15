@@ -15,6 +15,20 @@ if( !function_exists('array_key_last') ) {
     }
 }
 
+function debug_dump(...$args) {
+    global $realisstaff;
+    if (!$realisstaff) return;
+    $bt = debug_backtrace();
+    $caller = array_shift($bt);
+    echo "<script>\n";
+    echo "console.log(";
+    echo json_encode(basename($caller['file'])).",".json_encode($caller['line']);
+    foreach($args as $arg) {
+        echo "\n,".json_encode($arg);
+    }
+    echo "\n)</script>";
+}
+
 
 function beginsWith($haystack, $needle) {
     return 0 === strncasecmp($haystack, $needle, strlen($needle));

@@ -1,32 +1,37 @@
 <!DOCTYPE html>
-<html><head><title>Progress in course</title></head>
+<html lang="en"><head><title>Progress in course</title></head>
 <body>
 <?php
 require_once "tools.php";
 
+$prefix = getcwd();
 $outline = json_decode(file_get_contents('weights.json'), true);
 $outline['name'] = 'CS 4810';
-
+$closeall = isset($outline['deadline']) && $outline['deadline'] < date('Y-m-d');
 
 /**
  * return the score the student earned on the given task.
  * Also sets &$status to one of
  * 'taken', 'future', 'missed', 'excused'
  */
-function oneScore($task, &$status=FALSE) {
-    global $user, $metadata;
-    if ($user == 'mst3k') {
+function oneScore($task, $student, &$status=FALSE, $block=FALSE) {
+    global $metadata;
+    if ($block && preg_match($block, $task)) {
+        $status='future';
+        return 0;
+    }
+    if ($student == 'mst3k') {
         $status = 'taken';
         return rand() / getrandmax();
     }
     $qobj = qparse($task);
-    if (isset($metadata['excuse'][$task]) && in_array($user, $metadata['excuse'][$task]))
+    if (isset($metadata['excuse'][$task]) && in_array($student, $metadata['excuse'][$task]))
         $status = 'excused';
     else if (!$qobj || isset($qobj['error']) || $qobj['keyless'] || $qobj['draft'] || $qobj['due'] > time()) $status = 'future';
-    else if (!file_exists("log/$task/$user.log")) $status = 'missed';
+    else if (!file_exists("log/$task/$student.log")) $status = 'missed';
     else {
         $status = 'taken';
-        $tmp = $user;
+        $tmp = $student;
         return grade($qobj, $tmp);
     }
     return 0;
@@ -77,16 +82,19 @@ function doMath($eqn, $min, $max, $mean) {
 }
 
 $warning = '';
-function annotate(&$outline) {
-    global $warning;
+function annotate(&$outline, $student, $block=FALSE) {
+    global $warning, $prefix, $closeall;
+    $oldwd = getcwd();
+    chdir($prefix);
     if (is_string($outline)) {
         $stat = FALSE;
         $ans = array(
             "name" => "<a href='quiz.php?qid=$outline&$_SERVER[QUERY_STRING]'>$outline</a>",
-            "earned" => oneScore($outline, $stat),
+            "earned" => oneScore($outline, $student, $stat, $block),
         );
         $ans['status'] = $stat;
         $outline = $ans;
+        chdir($oldwd);
         return;
     }
     switch($outline['type']) {
@@ -98,7 +106,7 @@ function annotate(&$outline) {
         $closed = TRUE;
         foreach($outline['parts'] as &$obj) {
             $weight = isset($obj['weight']) ? $obj['weight'] : 1;
-            annotate($obj);
+            annotate($obj, $student, $block);
             if ($obj['status'] == 'excused') continue;
             if ($obj['status'] == 'future') {
                 $closed = FALSE;
@@ -114,10 +122,10 @@ function annotate(&$outline) {
     } break;
 
     case 'replace': {
-        $outline['status'] = 'future';
+        $outline['status'] = $closeall ? 'taken' : 'future';
         $outline['earned'] = 0;
         foreach($outline['parts'] as &$obj) {
-            annotate($obj);
+            annotate($obj, $student, $block);
             if ($obj['status'] == 'excused') continue;
             if (($obj['status'] == 'taken' || $obj['status'] == 'open') && $obj['earned']) {
                 $outline['status'] = $obj['status'];
@@ -137,9 +145,9 @@ function annotate(&$outline) {
             $outline['status'] = 'taken';
             $outline['earned'] = 0;
             foreach($outline['parts'] as &$obj) {
-                annotate($obj);
+                annotate($obj, $student, $block);
                 if ($obj['status'] == 'excused') continue;
-                if ($obj['status'] == 'taken') $scores[] = $obj['earned'];
+                if ($obj['status'] == 'taken' || $obj['status'] == 'missed') $scores[] = $obj['earned'];
                 else $outline['status'] = 'open';
             }
             if (count($scores) <= $outline['drop']) {
@@ -151,10 +159,10 @@ function annotate(&$outline) {
                 $outline['earned'] = $total / (count($scores) - $outline['drop']);
             }
         } else {
-            $outline['status'] = 'future';
+            $outline['status'] = $closeall ? 'taken' : 'future';
             $outline['earned'] = 0;
             foreach($outline['parts'] as &$obj) {
-                annotate($obj);
+                annotate($obj, $student, $block);
                 if ($obj['status'] == 'excused') continue;
                 if ($obj['status'] == 'taken' && $obj['earned'] > $outline['earned']) {
                     $outline['status'] = 'taken';
@@ -166,11 +174,11 @@ function annotate(&$outline) {
     
     case 'math': {
         $sum = 0; $count = 0; $max = 0; $min = 100;
-        $outline['status'] = 'future';
+        $outline['status'] = $closeall ? 'taken' : 'future';
         foreach($outline['parts'] as &$obj) {
-            annotate($obj);
+            annotate($obj, $student, $block);
             if ($obj['status'] == 'excused') continue;
-            if (($obj['status'] == 'taken' || $obj['status'] == 'open') && $obj['earned']) {
+            if (($obj['status'] == 'taken' || $obj['status'] == 'missed' || $obj['status'] == 'open') && $obj['earned'] || $closeall) {
                 $outline['status'] = $obj['status'];
                 $sum += $obj['earned'];
                 $count += 1;
@@ -193,7 +201,7 @@ function annotate(&$outline) {
 
     case 'item': {
         $stat = FALSE;
-        $outline['earned'] = oneScore($outline['name'], $stat);
+        $outline['earned'] = oneScore($outline['name'], $student, $stat);
         $outline['status'] = $stat;
         $outline['name'] = "<a href='quiz.php?qid=$outline&$_SERVER[QUERY_STRING]'>$outline[name]</a>";
     } break;
@@ -201,6 +209,9 @@ function annotate(&$outline) {
     default:
     $outline['status'] = 'not configured '.__LINE__;
     }
+
+debug_dump($student, $outline);
+    chdir($oldwd);
 }
 
 function display($outline, $depth=0) {
@@ -237,8 +248,8 @@ function display($outline, $depth=0) {
 }
 
 function ownScore() {
-    global $outline;
-    annotate($outline);
+    global $outline, $user;
+    annotate($outline, $user);
     display($outline);
 }
 
@@ -254,7 +265,7 @@ function allScores() {
         $user = $cid;
         $warning = '';
         $score = $outline;
-        annotate($score);
+        annotate($score, $cid);
         $user = $olduser;
         $name = $fullnames[$cid];
         echo "<tr><td><a href='?asuser=$cid' target='_blank'>$cid</a></td><td>$name</td><td><a href='?section=$sec'>$sec</a></td><td>".(100*$score['earned'])."</td><td>$warning</td></tr>";

@@ -309,6 +309,26 @@ If there is a rubric, then the question is ungraded until a human grades it.
 Post-autograde pre-human grade, the quiz grade shows as a grade range, as e.g. "3--7 / 8 (37--88%)"
 and the question shows "(not yet graded)"
 
+## External quizzes
+
+You can make a quiz-like placeholder for an externally-managed quiz.
+The presence of an `external` header is used to indicate this, and overrides most other quiz properties.
+
+|key       |default      |notes                                              |
+|:---------|:------------|:--------------------------------------------------|
+|`external`|             |The path to a CSV file containing grades           |
+|`compid`  |first column |Header of the column containing computing IDs      |
+|`score`   |second column|Header of the column containing scores on this task|
+|`outof`   |`1`          |Score that earns 100%                              |
+
+The CSV file must be comma (not tab) separated and 
+
+The compid column can have either the literal value identified by the login system
+or that followed by an @ and any suffix.
+For example, at UVA `mst3k` and `mst3k@virginia.edu` both work.
+
+See [questions/external-example.md](questions/external-example.md) for more.
+
 ## Course Grade
 
 You may optionally include a file name `weights.json` which enabled a grade-preview option.

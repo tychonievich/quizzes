@@ -6,7 +6,7 @@ require_once "tools.php";
 
 $prefix = getcwd();
 $outline = json_decode(file_get_contents('weights.json'), true);
-$outline['name'] = 'CS 4810';
+if (!isset($outline['name'])) $outline['name'] = 'Full Course';
 $closeall = isset($outline['deadline']) && $outline['deadline'] < date('Y-m-d');
 
 /**
@@ -28,7 +28,7 @@ function oneScore($task, $student, &$status=FALSE, $block=FALSE) {
     if (isset($metadata['excuse'][$task]) && in_array($student, $metadata['excuse'][$task]))
         $status = 'excused';
     else if (!$qobj || isset($qobj['error']) || $qobj['keyless'] || $qobj['draft'] || $qobj['due'] > time()) $status = 'future';
-    else if (!file_exists("log/$task/$student.log")) $status = 'missed';
+    else if (!isset($qobj['external']) && !file_exists("log/$task/$student.log")) $status = 'missed';
     else {
         $status = 'taken';
         $tmp = $student;

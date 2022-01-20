@@ -15,6 +15,23 @@ if( !function_exists('array_key_last') ) {
     }
 }
 
+$_fullnames = NULL;
+$_usernames = NULL;
+function pretty_name_of($user) {
+    global $_usernames, $_fullnames;
+    if ($_fullnames == NULL) {
+        if (file_exists('log/names.json'))
+            $_usernames = json_decode(file_get_contents('log/names.json'), true);
+        else $_usernames = array();
+        if (file_exists('fullnames.json'))
+            $_fullnames = json_decode(file_get_contents('fullnames.json'), true);
+        else $_fullnames = array();
+    }
+    if (isset($_usernames[$user])) return $_usernames[$user];
+    if (isset($_fullnames[$user])) return $_fullnames[$user];
+    return $user;
+}
+
 function debug_dump(...$args) {
     global $realisstaff;
     if (!$realisstaff) return;
@@ -22,7 +39,7 @@ function debug_dump(...$args) {
     $caller = array_shift($bt);
     echo "<script>\n";
     echo "console.log(";
-    echo json_encode(basename($caller['file'])).",".json_encode($caller['line']);
+    echo json_encode(basename($caller['file']).":$caller[line]");
     foreach($args as $arg) {
         echo "\n,".json_encode($arg);
     }
@@ -415,6 +432,9 @@ function qparse($qid,$abspath=FALSE) {
             chmod($cache, 0666);
         }
     } while ($updated != filemtime($filename));
+
+    if (isset($ans['external'])) $ans['due'] = $ans['open'];
+
     return $_qparse[$qid] = $ans;
 }
 
@@ -424,6 +444,8 @@ function aparse($qobj, $sid) {
     if (is_array($sid)) return $sid;
     if (is_string($qobj)) $qobj = qparse($qobj);
     if (isset($_aparse["$qobj[slug] $sid"])) return $_aparse["$qobj[slug] $sid"];
+
+    if (isset($qobj['external'])) return csv_parse($qobj, $sid);
 
     $ans = array();
     
@@ -676,20 +698,60 @@ function grade($qobj, &$sobj, &$review=FALSE, &$hist=FALSE) {
     if (is_string($sobj)) $sobj = aparse($qobj, $sobj);
     if (is_string($qobj)) $qobj = qparse($qobj);
     if (!$sobj || !$sobj['started']) return 0;
-    $earned = 0;
-    $outof = 0;
-    foreach($qobj['q'] as $qg) {
-        foreach($qg['q'] as $q) {
-            $earn = gradeQuestion($q, $sobj, $review, $hist);
-            if ($earn !== FALSE) {
-                $earned += $earn * $q['points'];
-                $outof += $q['points'];
+    if (!isset($qobj['external'])) {
+        $earned = 0;
+        $outof = 0;
+        foreach($qobj['q'] as $qg) {
+            foreach($qg['q'] as $q) {
+                $earn = gradeQuestion($q, $sobj, $review, $hist);
+                if ($earn !== FALSE) {
+                    $earned += $earn * $q['points'];
+                    $outof += $q['points'];
+                }
             }
         }
+        $sobj['score'] = $outof ? $earned / $outof : 0;
     }
-    $sobj['score'] = $outof ? $earned / $outof : 0;
     return $sobj['score'];
 }
+
+function csv_parse($qobj, $sid) {
+    global $_aparse;
+    if (is_array($sid)) return $sid;
+    if (is_string($qobj)) $qobj = qparse($qobj);
+    if (isset($_aparse["$qobj[slug] $sid"])) return $_aparse["$qobj[slug] $sid"];
+    
+    assert(isset($qobj['external']));
+    $ans = array();
+    $ans['start'] = $qobj['open'];
+    $ans['may_view'] = true;
+    $ans['may_view_key'] = true;
+    $ans['may_submit'] = false;
+    $ans['time_left'] = 0;
+    $ans['started'] = file_exists($qobj['external']);
+    if ($ans['started']) {
+        $ans['score'] = 0;
+        $fh = fopen($qobj['external'], "r");
+        $header = fgetcsv($fh);
+        $cid = 0; $scr = 1;
+        foreach($header as $i=>$v) {
+            if (isset($qobj['compid']) && $v == $qobj['compid']) $cid = $i;
+            if (isset($qobj['score']) && $v == $qobj['score']) $scr = $i;
+        }
+        while(($row = fgetcsv($fh)) !== FALSE) {
+            if (count($row) <= $cid) continue;
+            if (count($row) <= $scr) continue;
+            if ($row[$cid] == $sid || strpos($row[$cid], "$sid@") === 0)
+                $ans['score'] = floatval($row[$scr]);
+        }
+        fclose($fh);
+        if (isset($qobj['outof'])) $ans['score'] /= $qobj['outof'];
+    }
+    $_aparse["$qobj[slug] $sid"] = $ans;
+    return $ans;
+}
+
+
 
 $_histogram = array();
 function histogram($qobj, &$review=FALSE) {

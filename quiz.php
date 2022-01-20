@@ -354,6 +354,10 @@ function showQuiz($qid, $blank = false) {
         shuffle($qobj['q']);
     }
 
+    if (isset($qobj['external'])) {
+        echo "<div class='question'>You earned ".($sobj['score']*100)."% on this assignment</div>";
+    }
+
     $qnum = 0;
     foreach($qobj['q'] as $qg) {
 

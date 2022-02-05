@@ -198,11 +198,11 @@ function show_comments($quizid, $q, $mq) {
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll('span.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:false})
             )
             document.querySelectorAll('div.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:true})
             )
         });

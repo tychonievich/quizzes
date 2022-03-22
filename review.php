@@ -41,11 +41,11 @@ if ($isstaff) {
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll('span.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:false})
             )
             document.querySelectorAll('div.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:true})
             )
         });
@@ -96,7 +96,7 @@ console.log(<?=json_encode($votes)?>);
     <a style="text-align:center; display:block;" href="<?= $metadata['homepage'] ?>">Return to course page</a>
 <?php
 
-if ($_GET['qid'] && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'], '.') === FALSE && file_exists("review/$_GET[qid].md")) {
+if (isset($_GET['qid']) && strpos($_GET['qid'], '/') === FALSE  && strpos($_GET['qid'], '.') === FALSE && file_exists("review/$_GET[qid].md")) {
     $qobj = qparse("review/$_GET[qid].md", TRUE);
 
     echo "<h1 style='text-align:center'>$qobj[title]</h1>";

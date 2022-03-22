@@ -39,7 +39,7 @@ function debug_dump(...$args) {
     $caller = array_shift($bt);
     echo "<script>\n";
     echo "console.log(";
-    echo json_encode(basename($caller['file']).":$caller[line]");
+    echo json_encode(basename($caller['file'])).",".json_encode($caller['line']);
     foreach($args as $arg) {
         echo "\n,".json_encode($arg);
     }
@@ -113,7 +113,7 @@ function katexify_display($txt) {
 function toHTML($md) {
     global $metadata;
     $md = preg_replace_callback('/\$\$(.*?)\$\$/s', 'katexify_display', $md);
-    $md = preg_replace_callback('/\$(.*?)\$/s', 'katexify_inline', $md);
+    $md = preg_replace_callback('/\$([^\n]*?)\$/s', 'katexify_inline', $md);
     $html = MarkdownExtra::defaultTransform($md);
     if (!$metadata['server-side KaTeX']) {
         $html = preg_replace('/(<span class="mymath">)<code>(.*?)<\/code>(<\/span>)/s', '$1$2$3', $html);
@@ -169,6 +169,7 @@ function qparse($qid,$abspath=FALSE) {
             "keyless"=>false,
             "order"=>"shuffle",
             "hide"=>false,
+            "unhide"=>array(),
             "draft"=>false,
             "regrades"=>true,
             "imgneeded"=>false,
@@ -189,6 +190,7 @@ function qparse($qid,$abspath=FALSE) {
             if ($k == 'hours') { $k = 'seconds'; $v = intval(round(floatval($v)*60*60)); }
             if ($k == 'minutes') { $k = 'seconds'; $v = intval(round(floatval($v)*60)); }
             if ($k == 'title') $v = toInlineHTML($v);
+            if ($k == 'unhide') $v = preg_split("/[\s,;]+/", $v, -1, PREG_SPLIT_NO_EMPTY);
             if ($v === "true") $v = true;
             if ($v === "false") $v = false;
             $ans[$k] = $v;
@@ -374,6 +376,11 @@ function qparse($qid,$abspath=FALSE) {
                     'text'=>'',
                     'pin'=> stripos($line, 'pin') !== FALSE,
                 );
+                if (stripos($line, 'box(')) {
+                    $boxpos1 = stripos($line, 'box(')+4;
+                    $boxpos2 = stripos($line, ')', $boxpos);
+                    $q['boxrows'] = substr($line, $boxpos1, $boxpos2-$boxpos1);
+                }
                 // TO DO: add mmc keyed option
                 $ptspos = stripos($line, ' points)');
                 if ($ptspos > 0) {
@@ -547,6 +554,7 @@ function aparse($qobj, $sid) {
     }
     // view any open quiz, even if time's up
     $ans['may_view'] = in_array($sid, $metadata['staff']) 
+        || in_array($sid, $qobj['unhide'])
         || ($qobj['open'] <= $now && !$qobj['draft']);
     // view key of any non-keyless past-due quiz
     $ans['may_view_key'] = $qobj['due'] < $now && !$qobj['keyless'];
@@ -959,15 +967,15 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo '</ol>';
     } else if ($q['type'] == 'box') {
         $subm = $disable ? "disabled='disabled'" : ($ajax ? "onchange='$postcall' onkeydown='pending($qnum)'" : '');
-
-        echo "<div class='tinput'><span>Answer:</span><textarea name='ans$qnum' $subm>";
+        if (isset($q['boxrows'])) $subm .= " rows='$q[boxrows]'";
+        echo "<div class='tinput box'><span>Answer:</span><textarea name='ans$qnum' $subm>";
         if (isset($replied['answer'][0])) echo htmlentities($replied['answer'][0]);
         echo "</textarea></div>";
         if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
     } else if ($q['type'] == 'text') {
         $subm = $disable ? "disabled='disabled'" : ($ajax ? "onchange='$postcall' onkeydown='pending($qnum)'" : '');
 
-        echo "<div class='tinput'><span>Answer:</span><input type='text' name='ans$qnum' $subm";
+        echo "<div class='tinput text'><span>Answer:</span><input type='text' name='ans$qnum' $subm";
         if (isset($replied['answer'][0])) echo " value='".htmlentities($replied['answer'][0])."'";
         echo "/></div>";
         if ($hist && isset($q['key'][0]['text'])) echo "Key: <tt>".htmlentities($q['key'][0]['text'])."</tt>";
@@ -1013,7 +1021,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     }
     
     if ($comments && $ajax && (!$disable || isset($replied['comments']) && $replied['comments'])) {
-        echo "<div class='tinput'><span>Comments:</span><textarea id='comments$qnum' onchange='$postcall' onkeydown='pending($qnum)'";
+        echo "<div class='tinput comments'><span>Comments:</span><textarea id='comments$qnum' onchange='$postcall' onkeydown='pending($qnum)'";
         if ($disable) echo " disabled='disabled'";
         echo ">";
         if (isset($replied['comments'])) echo htmlentities($replied['comments']);
@@ -1038,7 +1046,7 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
     }
 
     if ($regrades && $hist) {
-        echo "<details><summary>Regrade request</summary><form method='POST'><div class='tinput'><textarea name='request'></textarea><input type='submit' value='submit request'/></div><input type='hidden' name='regrade' value='$q[slug]'/></form></details>";
+        echo "<details><summary>Regrade request</summary><form method='POST'><div class='tinput regrade'><textarea name='request'></textarea><input type='submit' value='submit request'/></div><input type='hidden' name='regrade' value='$q[slug]'/></form></details>";
     }
 
 

@@ -150,8 +150,9 @@ Meaningful headers lines are
 |`keyless`   |`false`             |prevents autograding, hides key, lets students take time-limited quizzes late|
 |`order`     |`shuffle`           |if no key shown, how should multiple-choice options be ordered? Values are `shuffle`, `sort`, and `pin`|
 |`qorder`    |= `order`           |if no key shown, how should questions be ordered? Values are `shuffle`, `sort`, and `pin`|
-|`hide`      |= `false`           |if `true`, will only be shown on index for (a) staff and (b) students who have already viewed it|
-|`draft`     |= `false`           |if `true`, will only be shown on index and only be viewable by staff|
+|`hide`      |  `false`           |if `true`, will only be shown on index for (a) staff and (b) students who have already viewed it|
+|`draft`     |  `false`           |if `true`, will only be shown on index and only be viewable by staff|
+|`unhide`    |empty list          |space-or-comma separated list of IDs who should bypass `hide` and `draft` keys|
 
 The header lines must be terminated by a blank line.
 

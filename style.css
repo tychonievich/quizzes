@@ -20,7 +20,7 @@ textarea { background-color: inherit; }
 
 img.preview { vertical-align: middle; max-height: 10em; box-shadow: 0 0 0.5ex 0.25ex grey; }
 
-ol.options li label { display: flex; align-items: center; }
+ol.options li label { display: flex; align-items: center; border: thin solid #eee; }
 ol.options li label input { margin-right: 1ex; }
 ol.options li { padding: 0.5ex 0ex; }
 ol.options li::marker { color: rgba(0,0,0,0.5); }
@@ -33,9 +33,9 @@ div.tinput *:first-child { margin-right: 1ex; }
 
 
 table { border-collapse: collapse; width:100%; }
-thead tr:last-child { border-bottom: thin black solid; }
+thead > tr:last-child { border-bottom: thin black solid; }
 th { text-align:left;  padding:0ex 1ex; }
-tbody tr:nth-child(2n+1) { background-color:#ddd; }
+tbody > tr:nth-child(2n+1) { background-color:rgba(0,0,0,0.0625); }
 td { padding:1ex; }
 
 .question th,td { padding: 0.25ex 1ex; }

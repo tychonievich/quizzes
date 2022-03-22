@@ -23,6 +23,9 @@ if (!$isstaff) die("Staff only"); // IMPORTANT! This code does not check may_vie
         p { margin: 0; }
         p + p { text-indent: 1.5em; }
         .multiquestion > .question { display: inline-block; vertical-align: top; }
+        .directions,.counts { padding: 1ex 0; margin: 0; border-bottom: thin dotted black; }
+        .box > span { display:none; }
+        .box > textarea { width: 100%; background: #fff; border: thin solid black; }
     </style>
     
     <link rel="stylesheet" href="katex/katex.min.css">
@@ -30,11 +33,11 @@ if (!$isstaff) die("Staff only"); // IMPORTANT! This code does not check may_vie
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll('span.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:false})
             )
             document.querySelectorAll('div.mymath').forEach(x => 
-                katex.render(x.innerText, x, 
+                katex.render(x.textContent, x, 
                     {throwOnError:false, displayMode:true})
             )
         });
@@ -57,6 +60,25 @@ function showQuiz($qid, $seed = false) {
     echo "<p>Name: <input type='text' style='width:3in'>";
     echo "<br/>Computing ID: <input type='text' style='width:1in'></p>";
 
+    $num_questions = 0;
+    $num_parts = 0;
+    $num_points = 0;
+    foreach($qobj['q'] as $qg) {
+        $num_questions += 1;
+        foreach($qg['q'] as $q) {
+            $num_parts += 1;
+            $num_points += $q['points'];
+        }
+    }
+
+    echo "<div class='directions'>$qobj[directions]</div><div class='counts'>";
+    if ($num_parts == $num_questions) echo "<p>There are $num_parts questions ";
+    else echo "<p>There are $num_questions questions with $num_parts parts ";
+    echo "worth $num_points total points.</p>";
+    echo "</div>";
+
+
+
     if ($qobj['qorder'] == 'shuffle' && $seed) {
         srand(crc32("$seed $qobj[slug]"));
         shuffle($qobj['q']);
@@ -78,7 +100,7 @@ function showQuiz($qid, $seed = false) {
         $pnum = 0;
         foreach($qg['q'] as $q) {
             $pnum += 1;
-            showQuestion($q, $qid, ($multi ? chr($pnum+96) : false)
+            showQuestion($q, $qid, ($multi ? $qnum.'.'.chr($pnum+96) : false)
                 ,$seed // use seed as the user for shuffling
                 ,false // no comments boxes
                 ,$qg['text']

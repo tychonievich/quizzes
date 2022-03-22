@@ -34,7 +34,7 @@ foreach(glob('questions/*.md') as $f) {
     $qobj = qparse($name);
     if (!$isstaff && (
         $qobj['draft'] || 
-        ($qobj['hide'] && !file_exists("log/$name/$user.log"))
+        ($qobj['hide'] && !file_exists("log/$name/$user.log") && !in_array($user, $qobj['unhide']))
     )) continue; // unlist
     $qsortting[$qobj['due'].'-'.$name] = array($name, $qobj);
 }

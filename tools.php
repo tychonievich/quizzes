@@ -1,9 +1,9 @@
 <?php
 
-require_once "Michelf/MarkdownInterface.php";
-require_once "Michelf/Markdown.php";
-require_once "Michelf/MarkdownExtra.php";
-use Michelf\MarkdownExtra as MarkdownExtra;
+require_once "Parsedown.php";
+require_once "ParsedownExtra.php";
+require_once "ParsedownKatex.php";
+$Parsedown = new ParsedownKatex();
 
 require_once "authenticate.php";
 define("JSON_PRETTY", JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -13,23 +13,6 @@ if( !function_exists('array_key_last') ) {
     function array_key_last(array $array) {
         if( !empty($array) ) return key(array_slice($array, -1, 1, true));
     }
-}
-
-$_fullnames = NULL;
-$_usernames = NULL;
-function pretty_name_of($user) {
-    global $_usernames, $_fullnames;
-    if ($_fullnames == NULL) {
-        if (file_exists('log/names.json'))
-            $_usernames = json_decode(file_get_contents('log/names.json'), true);
-        else $_usernames = array();
-        if (file_exists('fullnames.json'))
-            $_fullnames = json_decode(file_get_contents('fullnames.json'), true);
-        else $_fullnames = array();
-    }
-    if (isset($_usernames[$user])) return $_usernames[$user];
-    if (isset($_fullnames[$user])) return $_fullnames[$user];
-    return $user;
 }
 
 function debug_dump(...$args) {
@@ -60,73 +43,15 @@ function file_put_contents_recursive($filename, $contents, $flags=0) {
     chmod($filename, 0666);
 }
 
-function katexify($txt, $display=false) {
-    $cache_file = "cache/katex/".($display ? 'display' : 'inline')."/".sha1($txt).'.html';
-    if (file_exists($cache_file))
-        return file_get_contents($cache_file);
-    $dsc = array(
-        array('pipe','r'),
-        array('pipe','w'),
-        array('pipe','w'),
-    );
-    $proc = proc_open('npx katex --no-throw-on-error' . ($display ? ' --display-mode' : ''), $dsc, $pipes);
-    if (is_resource($proc)) {
-        fwrite($pipes[0], $txt);
-        fclose($pipes[0]);
-        $ans = trim(stream_get_contents($pipes[1]));
-        fclose($pipes[1]);
-        proc_close($proc);
-        file_put_contents_recursive($cache_file, $ans);
-        return $ans;
-    } else {
-        file_put_contents_recursive($cache_file, trim($txt));
-        return trim($txt);
-    }
-}
-
-function katexify_inline($txt) {
-    global $metadata;
-    if ($metadata['server-side KaTeX'])
-        return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
-    else
-        return '<span class="mymath">`{\\displaystyle{'.$txt[1].'}}`</span>';
-        // note: backticks prevent \{ turning into {, but also mean ` cannot appear
-}
-function katexify_inline2($txt) {
-    global $metadata;
-    if ($metadata['server-side KaTeX'])
-        return katexify(html_entity_decode('{\\displaystyle{'.$txt[1].'}}'), false);
-    else
-        return '<span class="mymath">{\\displaystyle{'.$txt[1].'}}</span>';
-}
-function katexify_display($txt) {
-    global $metadata;
-    if ($metadata['server-side KaTeX'])
-        return katexify(html_entity_decode($txt[1]), true);
-    else
-        return '<div class="mymath">'.$txt[1].'</div>';
-}
-
-/// performs Markdown -> HTML and KaTeX transformations
-/// does $math$ and $$math$$ first, then markdown, then \\(math\\) and \\[math\\]
-/// time consuming because of the katex calls, but only if there is math in the page (otherwise quite fast)
+/// performs Markdown -> HTML and KaTeX transformations using ParsedownKatex
 function toHTML($md) {
-    global $metadata;
-    $md = preg_replace_callback('/\$\$(.*?)\$\$/s', 'katexify_display', $md);
-    $md = preg_replace_callback('/\$([^\n]*?)\$/s', 'katexify_inline', $md);
-    $html = MarkdownExtra::defaultTransform($md);
-    if (!$metadata['server-side KaTeX']) {
-        $html = preg_replace('/(<span class="mymath">)<code>(.*?)<\/code>(<\/span>)/s', '$1$2$3', $html);
-        $html = preg_replace('/(<div class="mymath">)<code>(.*?)<\/code>(<\/div>)/s', '$1$2$3', $html);
-    }
-    $html = preg_replace_callback('/\&#92;\[(.*?)\&#92;\]/s', 'katexify_display', $html);
-    $html = preg_replace_callback('/\&#92;\((.*?)\&#92;\)/s', 'katexify_inline2', $html);
-    return $html;
+    global $Parsedown;
+    return $Parsedown->text($md);
 }
 function toInlineHTML($md) {
     // fixme: use a markdown library that has an API for inline html
     $tmp = trim(toHTML($md));
-    return substr($tmp, 3, strlen($tmp)-7);
+    return substr($tmp,3,-4); // remove surrounding <p>...</p>
 }
 
 
@@ -863,7 +788,7 @@ function fractionOf($num) {
 function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=false, $replied=array(), $disable=false, $hist=false, $ajax=true, $unshuffle=false, $regrades=false, $printmode=false){
     global $metadata, $realisstaff;
     $postcall = "postAns(".htmlspecialchars(json_encode($quizid)).", $qnum)";
-    
+
     if ($printmode) {
         if ($qnum) {
             echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
@@ -878,7 +803,9 @@ function showQuestion($q, $quizid, $qnum, $user, $comments=false, $seeabove=fals
         echo "</div>";
     } else {
 
-        echo "<div class='question' id='q$qnum' slug='$q[slug]'>";
+        echo "<div class='question";
+        if (isset($replied['answer']) && !empty($replied['answer'])) echo " submitted";
+        echo "' id='q$qnum' slug='$q[slug]'>";
 
         
         echo "<div class='description' id='d$qnum'>";

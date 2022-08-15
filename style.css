@@ -63,3 +63,6 @@ img.pageview { /* This useage prevents zooming in on image; FIX ME */
 .chat dt small { font-weight: normal; }
 .chat dd { white-space: pre-wrap; font-family: sans-serif; }
 .chat dd + dt { margin-top: 1em; }
+
+
+code,pre { border: thin solid #eee; }

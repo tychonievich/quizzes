@@ -1,0 +1,14 @@
+<Files *.json>
+    order allow,deny
+    deny from all
+</Files>
+
+<Files *.csv>
+    order allow,deny
+    deny from all
+</Files>
+
+<Files *.lock>
+    order allow,deny
+    deny from all
+</Files>

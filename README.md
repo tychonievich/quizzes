@@ -1,72 +1,21 @@
-This repository contains an online quizzing tool, designed for and tested on UVA's implementation of shibboleth.
+This repository contains an online quizzing tool, designed for and tested using Google's OAuth 2.0 implementation and UIUC's google apps features.
 
 ## Installation
 
-This directory needs to be in a place apache can find it.
-
-You'll need to give apache write-access to the `log/` and `cache/` subdirectories.
-This can be done by, e.g. `chmod 777 log/ cache/` or `chown www-data log/ cache/`, etc.
-
-### Dependencies
-
-You'll need a copy of KaTeX and of Michelf's Markdown.
-
-#### Automatic
-
-Run `bash .htgetDeps.sh` -- this should download all needed dependencies for you.
-
-#### Manual KaTeX
-
-You'll need to install [KaTeX](https://github.com/KaTeX/KaTeX) if you want math rendering; you'll also need servable copies of the katex css and fonts files.
-
-Two modes of KaTeX handling are supported;
-client-side (the default) and server-side.
-
-##### Server-side installation
-
-Set `"server-side KaTeX":true` in `course.json` and run
-
-1. `npm install --global katex`
-2. `mkdir katex`
-3. `cp /usr/local/lib/node_modules/katex/dist/katex.min.css katex/`
-4. `cp -r /usr/local/lib/node_modeuls/katex/dist/fonts katex/`
-
-(note: `/usr/local/lib/node_modules/` might be `/usr/lib/node_modules/` instead depending on how `npm` is installed).
-
-##### Client-side installation
-
-Set `"server-side KaTeX":false` in `course.json` and download and extract [the latest release of KaTeX](https://github.com/KaTeX/KaTeX/releases/latest).
-After extraction, there should be at least the following in your main quizzes directory:
-
-```
-└── katex
-    ├── fonts
-    │   ... many files here
-    ├── katex.min.css
-    └── katex.min.js
-```
-
-#### Manual Markdown
-
-You'll need a copy of [Markdown.php](https://github.com/michelf/php-markdown/tree/lib/Michelf) as well.
-
-5. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/Markdown.php" -P Michelf`
-6. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownExtra.php" -P Michelf`
-7. `wget "https://raw.githubusercontent.com/michelf/php-markdown/lib/Michelf/MarkdownInterface.php" -P Michelf`
-
-### Customize
-
-The files provided assume apache authenticates users via Shibboleth or another automated authentication system, placing verified user IDs in `$_SERVER[PHP_AUTH_USER]` before running any script.
-If you have a different authentication system, you'll need to modify `authenticate.php` (and possibly `.htaccess`) accordingly.
-
-You'll need to customize the course information in `course.json`
-
-- `"homepage"` will be added as a link to the top and bottom of each page
-- `"quizname"` will be used to identify quizzes to users
-- `"staff"` is a list of login IDs who have pre-open viewing and grade adjusting powers
-- `"time_mult"` is a mapping of user IDs and multipliers to add to their quiz time limits, for students who get extra time on tests
-- `"server-side KaTeX"` should be set to `false` unless you have a compelling reason not to want client-side math rendering
-- `"detailed-partial"`, if `true` will show partial credit as vulgar fractions like ⅜; without, all partial is shown just as ½
+1. This directory needs to be in a place apache can find it.
+2. Run `bash .htgetDeps.sh` or do what it does manually:
+    1. Give apache write-access to the `log/` and `cache/` subdirectories. This can be done by, e.g. `chmod 777 log/ cache/` or `chown www-data log/ cache/`, etc.
+    2. Download `Parsedown.php` from <https://github.com/erusev/parsedown>
+    3. Download `ParsedownExtra.php` from <https://github.com/erusev/parsedown-extra>
+3. Edit `course.json` to match your course. Note that the keys `staff` and `server-side Katex` are not currently used and can be safely deleted.
+4. Move everything in `move_to_document_root/` to your document root folder (e.g. `/var/www/html/`) and delete the `move_to_document_root` directory
+5. From the document root,
+    1. create a project at <https://console.cloud.google.com/apis/credentials> with OAuth 2.0 credentials
+        1. include the scope `https://www.googleapis.com/auth/userinfo.email`
+        2. include the redirect path `https://`*your-domain*`/authentication.php`
+    2. edit `authentication.php` to have
+        1. the client id, client secret, and redirect path from your OAuth 2.0 credentials
+        2. your ID instead of `luthert` as an admin
 
 ## Creating Quizzes
 

@@ -16,21 +16,45 @@ require_once "tools.php";
     }
     ?>
     
-    <link rel="stylesheet" href="katex/katex.min.css">
-    <script type="text/javascript" src="katex/katex.min.js"></script>
-    <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll('span.mymath').forEach(x => 
-                katex.render(x.textContent, x, 
-                    {throwOnError:false, displayMode:false})
-            )
-            document.querySelectorAll('div.mymath').forEach(x => 
-                katex.render(x.textContent, x, 
-                    {throwOnError:false, displayMode:true})
-            )
-        });
-    </script>
 
+    <!-- KaTeX support -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js" crossorigin="anonymous"></script>
+    <style>
+        katex { display: block; }
+        katex:before, katex:after { content: "$$"; }
+        katex-inline { display: inline; } 
+        katex-inline:before, katex-inline:after { content: "$"; }
+        katex, katex-inline { font-family: monospace; whitespace: pre-wrap; }
+        .katex { font-size: inherit; line-height: inherit; }
+    </style>
+    <script defer>
+        function renderMathInElement(el) {
+            console.info(el);
+            el.querySelectorAll('katex-inline').forEach(x=>{
+                let replacement = document.createElement('span');
+                replacement.classList.add('katex-wrapper')
+                katex.render(x.textContent, replacement, {
+                    throwOnError: false,
+                    displayMode: false
+                })
+                x.replaceWith(replacement);
+            })
+            el.querySelectorAll('katex').forEach(x=>{
+                let replacement = document.createElement('div');
+                replacement.classList.add('katex-wrapper')
+                katex.render(x.textContent, replacement, {
+                    throwOnError: false,
+                    displayMode: true
+                })
+                x.replaceWith(replacement);
+            })
+        }
+        window.addEventListener('load',(evt)=>{renderMathInElement(document.body)})
+    </script>
+    <!-- end of KaTeX support -->
+
+    
     <script>
 <?php if (!isset($_GET['view_only'])) { ?>
 function pending(num) {

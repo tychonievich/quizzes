@@ -1,25 +1,29 @@
 <?php
-
-$metadata = json_decode(file_get_contents('course.json'), TRUE);
-
-if (php_sapi_name() == "cli") { // let run from commandline for testing
-    parse_str(implode('&', array_slice($argv, 1)), $_GET);
-    $_SERVER['REQUEST_URI'] = '.';
-    $user = 'mst3k'; // UVA's reserved "example use only" shibboleth username
-    $isstaff = true;
-    $realisstaff = $isstaff;
-} else if ($_SERVER['SERVER_PORT'] == 8080) {
-    $user = 'mst3k'; // UVA's reserved "example use only" shibboleth username
-    $isstaff = true;
-    $realisstaff = $isstaff;
-} else {
-    $user = $_SERVER['PHP_AUTH_USER'];
-    $isstaff = in_array($user, $metadata['staff']);
-    $realisstaff = $isstaff;
+session_start();
+if (!$_SESSION['user']) {
+    $_SESSION['redirect'] = $_SERVER['SCRIPT_NAME'];
+    header("Location: https://cs418.cs.illinois.edu/authenticate.php");
+    exit();
 }
-if ($isstaff && array_key_exists('asuser', $_GET)) {
-    $user = basename($_GET['asuser']); // remove slashes
-    $isstaff = in_array($user, $metadata['staff']);
+
+$user = $_SESSION['user'];
+$fullname = isset($_SESSION['details']['name']) ? $_SESSION['details']['name'] : $user;
+$name = isset($_SESSION['details']['given_name']) ? $_SESSION['details']['given_name'] : $fullname;
+
+$isstaff = $_SESSION['role'] == 'staff';
+$realisstaff = $isstaff;
+if ($isstaff && isset($_GET['asuser'])) {
+    $user = $_GET['asuser'];
+    $isstaff = isset($staff[$user]);
+    if (isset($students[$user]['Name'])) {
+        $fullname = $students[$user]['Name'];
+        $name = trim(substr($fullname, strrpos($fullname,",")+1));
+    } else {
+        $fullname = $user;
+        $name = $user;
+    }
 }
+
+$metadata = is_file('course.json') ? json_decode(file_get_contents('course.json'), TRUE) : [];
 
 ?>
